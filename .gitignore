@@ -1,0 +1,77 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environment variables and secrets
+.env
+.env.*
+agents/**/.env
+# Defensive: never commit a stray Cloud Run env-vars file with keys (the deploy
+# is service.yaml-based now, so this shouldn't exist — but keep it ignored).
+env.yaml
+# ...but DO commit the per-agent .env.example templates so the env-var structure
+# is self-documenting in the repo.
+!.env.example
+!agents/**/.env.example
+
+# Service account key files (defense in depth — keys should never live in repo)
+*.json.key
+sa-key-*.json
+*-credentials.json
+
+# Virtual 
+.venv/
+env/
+venv/
+ENV/
+.agents-venv/
+*-venv/
+
+# Per-deploy metadata
+deployment_metadata.json
+agents/**/deployment_metadata.json
+
+# macOS system files
+.DS_Store
+
+# ADK local session database
+.adk/
+agents/**/.adk/
+session.db
+*.db
+
+# Editor and IDE configurations
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Local debugging scratch — fetched logs, paste-from-console findings, etc.
+# These are how the dev hands cloud state to the local agent; not source.
+issues.txt
+log.json
+logs.json
+audit-logs.json
+audit*.json
+finding*.txt
+finding*.json
+findig*.json
+findings*
+*.log
+sample.py
+example-snippet.py
+example-agent-registry.png
+
+# Apigee proxy bundles: track the EXTRACTED XML under apigee/<proxy>/apiproxy/,
+# never the exported .zip (binary, unreviewable).
+#apigee/**/*.zip
+#*.apigee.zip
+
+# Deploy logs — one repo-root home (demo_env.deploy_log_dir): deploy-logs/<tool>/
+deploy-logs/
+# legacy location (was agents/.deploy-logs/)
+.deploy-logs/
+
+# AI coding-assistant local state (settings + scratch worktrees)
+.claude/
