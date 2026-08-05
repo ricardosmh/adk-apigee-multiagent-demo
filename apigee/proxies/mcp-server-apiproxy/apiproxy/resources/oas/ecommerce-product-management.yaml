@@ -1,0 +1,439 @@
+openapi: 3.0.3
+info:
+  title: Products Service
+  description: Microservice for managing e-commerce product catalog and inventory.
+  version: 1.0.0
+servers:
+- url: https://internal.apigee.com
+  description: Gateway base URL
+paths:
+  /product-management/health:
+    get:
+      tags:
+      - Health
+      summary: Health Check
+      operationId: checkProductHealth
+      description: Endpoint to verify the health and operational readiness of the products microservice.
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+  /product-management/products:
+    post:
+      tags:
+      - Products
+      summary: Create Product
+      operationId: createProduct
+      description: Add a new product item to the e-commerce catalog inventory.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductCreate'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    get:
+      tags:
+      - Products
+      summary: Get Products
+      operationId: listProducts
+      description: Retrieve a paginated and filterable catalog list of available products.
+      parameters:
+      - name: category
+        in: query
+        required: false
+        schema:
+          type: string
+          nullable: true
+          description: Filter by category
+          title: Category
+        description: Filter by category
+      - name: brand
+        in: query
+        required: false
+        schema:
+          type: string
+          nullable: true
+          description: Filter by brand
+          title: Brand
+        description: Filter by brand
+      - name: skip
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 0
+          title: Skip
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 100
+          title: Limit
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProductResponse'
+                title: Response Get Products Products Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /product-management/products/{product_id}:
+    get:
+      tags:
+      - Products
+      summary: Get Product
+      operationId: getProductById
+      description: Retrieve complete details and inventory status for a specific product by ID.
+      parameters:
+      - name: product_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Product Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    put:
+      tags:
+      - Products
+      summary: Update Product
+      operationId: updateProductById
+      description: Update catalog details or attributes for a specific product by ID.
+      parameters:
+      - name: product_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Product Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductUpdate'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    delete:
+      tags:
+      - Products
+      summary: Delete Product
+      operationId: deleteProductById
+      description: Remove a product item from the e-commerce catalog by ID.
+      parameters:
+      - name: product_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Product Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /product-management/products/{product_id}/stock:
+    patch:
+      tags:
+      - Products
+      summary: Update Product Stock
+      operationId: updateProductStock
+      description: Adjust available inventory stock quantities for a specific product by ID.
+      parameters:
+      - name: product_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Product Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductStockUpdate'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+components:
+  schemas:
+    HTTPValidationError:
+      properties:
+        detail:
+          items:
+            $ref: '#/components/schemas/ValidationError'
+          type: array
+          title: Detail
+      type: object
+      title: HTTPValidationError
+    ProductCreate:
+      properties:
+        productName:
+          type: string
+          title: Productname
+        price:
+          anyOf:
+          - type: number
+          - type: string
+            pattern: ^[+-]?\d+(\.\d+)?$
+          title: Price
+          description: Price of the product
+        description:
+          type: string
+          nullable: true
+          title: Description
+        SKU:
+          type: string
+          title: Sku
+        category:
+          type: string
+          nullable: true
+          title: Category
+        brand:
+          type: string
+          nullable: true
+          title: Brand
+        stockQuantity:
+          type: integer
+          nullable: true
+          title: Stockquantity
+          default: 0
+        imageUrl:
+          type: string
+          nullable: true
+          title: Imageurl
+        dimension_height:
+          type: string
+          nullable: true
+          title: Dimension Height
+        dimension_width:
+          type: string
+          nullable: true
+          title: Dimension Width
+        dimension_depth:
+          type: string
+          nullable: true
+          title: Dimension Depth
+        weight:
+          type: string
+          nullable: true
+          title: Weight
+      type: object
+      required:
+      - productName
+      - price
+      - SKU
+      title: ProductCreate
+    ProductResponse:
+      properties:
+        productName:
+          type: string
+          title: Productname
+        price:
+          type: string
+          pattern: ^[+-]?\d+(\.\d+)?$
+          title: Price
+          description: Price of the product
+        description:
+          type: string
+          nullable: true
+          title: Description
+        SKU:
+          type: string
+          title: Sku
+        category:
+          type: string
+          nullable: true
+          title: Category
+        brand:
+          type: string
+          nullable: true
+          title: Brand
+        stockQuantity:
+          type: integer
+          nullable: true
+          title: Stockquantity
+          default: 0
+        imageUrl:
+          type: string
+          nullable: true
+          title: Imageurl
+        dimension_height:
+          type: string
+          nullable: true
+          title: Dimension Height
+        dimension_width:
+          type: string
+          nullable: true
+          title: Dimension Width
+        dimension_depth:
+          type: string
+          nullable: true
+          title: Dimension Depth
+        weight:
+          type: string
+          nullable: true
+          title: Weight
+        productId:
+          type: integer
+          title: Productid
+      type: object
+      required:
+      - productName
+      - price
+      - SKU
+      - productId
+      title: ProductResponse
+    ProductStockUpdate:
+      properties:
+        stockQuantity:
+          type: integer
+          title: Stockquantity
+      type: object
+      required:
+      - stockQuantity
+      title: ProductStockUpdate
+    ProductUpdate:
+      properties:
+        productName:
+          type: string
+          nullable: true
+          title: Productname
+        price:
+          anyOf:
+          - type: number
+          - type: string
+            pattern: ^[+-]?\d+(\.\d+)?$
+          nullable: true
+          title: Price
+        description:
+          type: string
+          nullable: true
+          title: Description
+        SKU:
+          type: string
+          nullable: true
+          title: Sku
+        category:
+          type: string
+          nullable: true
+          title: Category
+        brand:
+          type: string
+          nullable: true
+          title: Brand
+        stockQuantity:
+          type: integer
+          nullable: true
+          title: Stockquantity
+        imageUrl:
+          type: string
+          nullable: true
+          title: Imageurl
+        dimension_height:
+          type: string
+          nullable: true
+          title: Dimension Height
+        dimension_width:
+          type: string
+          nullable: true
+          title: Dimension Width
+        dimension_depth:
+          type: string
+          nullable: true
+          title: Dimension Depth
+        weight:
+          type: string
+          nullable: true
+          title: Weight
+      type: object
+      title: ProductUpdate
+    ValidationError:
+      properties:
+        loc:
+          items:
+            anyOf:
+            - type: string
+            - type: integer
+          type: array
+          title: Location
+        msg:
+          type: string
+          title: Message
+        type:
+          type: string
+          title: Error Type
+        input:
+          title: Input
+        ctx:
+          type: object
+          title: Context
+      type: object
+      required:
+      - loc
+      - msg
+      - type
+      title: ValidationError

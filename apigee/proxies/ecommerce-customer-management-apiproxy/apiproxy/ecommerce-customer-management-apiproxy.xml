@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<APIProxy revision="1" name="ecommerce-customer-management-apiproxy">
+  <DisplayName/>
+  <Description>Microservice for managing e-commerce customers.</Description>
+  <CreatedAt>1779730609805</CreatedAt>
+  <LastModifiedAt>1779730651900</LastModifiedAt>
+  <BasePaths>/customer-management</BasePaths>
+  <ProxyEndpoints>
+    <ProxyEndpoint>default</ProxyEndpoint>
+  </ProxyEndpoints>
+  <TargetEndpoints>
+    <TargetEndpoint>default</TargetEndpoint>
+  </TargetEndpoints>
+</APIProxy>

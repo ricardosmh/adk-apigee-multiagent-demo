@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<ExtractVariables name="EV-ExtractRequest">
+  <DisplayName>EV-ExtractRequest</DisplayName>
+  <Source>request</Source>
+  <Variable name="proxy.pathsuffix">
+    <Pattern ignoreCase="true">/models/{dynamic_model}:streamGenerateContent</Pattern>
+    <Pattern ignoreCase="true">/models/{dynamic_model}:generateContent</Pattern>
+  </Variable>
+  <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+</ExtractVariables>

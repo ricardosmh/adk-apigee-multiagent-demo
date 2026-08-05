@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<AssignMessage continueOnError="false" enabled="true" name="AM-set-sonnet-model">
+  <DisplayName>AM-set-sonnet-model</DisplayName>
+  <Properties/>
+  <AssignVariable>
+    <Name>dynamic_model</Name>
+    <Value>claude-sonnet-4-6</Value>
+    <!-- This is model value -->
+  </AssignVariable>
+  <IgnoreUnresolvedVariables>false</IgnoreUnresolvedVariables>
+  <AssignTo createNew="false" transport="http" type="request"/>
+</AssignMessage>

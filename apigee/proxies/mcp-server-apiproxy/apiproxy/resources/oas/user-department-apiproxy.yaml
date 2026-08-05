@@ -1,0 +1,203 @@
+openapi: 3.0.0
+info:
+  title: User Department Management API
+  version: v1
+  description: |
+    # User Department Management API
+
+    This API provides tools for managing user information. It is a Cloud Run service.
+
+    * **Retrieve User Details:** Get detailed profiles for individual users.
+    * **List All Users:** Fetch a paginated list of all users.
+
+    **Data Source:** All user data is retrieved from and persisted in a data source.
+  termsOfService: https://www.example.com/terms
+  contact:
+    name: API Support Team
+    url: https://www.example.com/support
+    email: support@example.com
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+servers:
+  - url: https://internal.apigee.com
+    description: Server URL.
+tags:
+  - name: Users
+    description: Operations related to managing users.
+  - name: Health Check
+    description: Operations related to health checks.
+paths:
+  /department/ready:
+    get:
+      tags:
+        - Health Check
+      summary: Health Check
+      description: Returns the status of the service.
+      operationId: departmentHealthCheck
+      parameters:
+        - in: header
+          name: country
+          required: true
+          description: "The country code (e.g., US, CL) to route the request to the appropriate backend."
+          schema:
+            type: string
+            enum:
+              - US
+              - CL
+      responses:
+        '200':
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+              examples:
+                '0':
+                  value:
+                    status: "ready"
+  /department/users:
+    get:
+      tags:
+        - Users
+      summary: Get a list of all users.
+      description: Returns a paginated list of users.
+      operationId: getDepartmentUsers
+      parameters:
+        - in: header
+          name: country
+          required: true
+          description: "The country code (e.g., US, CL) to route the request to the appropriate backend."
+          schema:
+            type: string
+            enum:
+              - US
+              - CL
+      responses:
+        '200':
+          description: Successful retrieval of users.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  description:
+                    type: string
+                  user_list:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/User'
+                  docs:
+                    type: string
+              examples:
+                '0':
+                  value:
+                    description: "Returned a catalog of users"
+                    user_list:
+                      - id: 1
+                        name: "Jennifer Campbell"
+                        email: "jennifer.campbell@yahoo.com"
+                        age: 59
+                        location:
+                          city: "South Boston"
+                          state: "MA"
+                      - id: 2
+                        name: "Daniel Davis"
+                        email: "daniel.davis@example.com"
+                        age: 29
+                        location:
+                          city: "Charleston"
+                          state: "SC"
+  /department/users/{userId}:
+    get:
+      tags:
+        - Users
+      summary: Get details for a specific user.
+      description: Returns the details of a single user identified by their unique ID.
+      operationId: getDepartmentUserById
+      parameters:
+        - in: header
+          name: country
+          required: true
+          description: "The country code (e.g., US, CL) to route the request to the appropriate backend."
+          schema:
+            type: string
+            enum:
+              - US
+              - CL
+        - in: path
+          name: userId
+          required: true
+          description: The unique identifier of the user.
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful retrieval of the user.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  description:
+                    type: string
+                  user:
+                    $ref: '#/components/schemas/User'
+                  docs:
+                    type: string
+              examples:
+                '0':
+                  value:
+                    description: "Returned a single user"
+                    user:
+                      id: 1
+                      name: "Jennifer Campbell"
+                      email: "jennifer.campbell@yahoo.com"
+                      age: 59
+                      location:
+                        city: "South Boston"
+                        state: "MA"
+                    docs: "pending"
+        '404':
+          description: User not found.
+components:
+  schemas:
+    User:
+      type: object
+      description: Represents a user within the business.
+      properties:
+        id:
+          type: integer
+          description: The unique identifier of the user.
+        name:
+          type: string
+          description: The full name of the user.
+        email:
+          type: string
+          format: email
+          description: The email address of the user.
+        age:
+          type: integer
+          description: The age of the user.
+        location:
+          $ref: '#/components/schemas/Location'
+    Location:
+      type: object
+      properties:
+        city:
+          type: string
+        state:
+          type: string
+  securitySchemes:
+    oauth-client-credentials:
+      type: oauth2
+      description: This API uses OAuth 2 with the client credentials flow.
+      flows:
+        clientCredentials:
+          tokenUrl: https://user-department-api-xyz.a.run.app/oauth/token
+          scopes: {}
+security:
+  - oauth-client-credentials: []

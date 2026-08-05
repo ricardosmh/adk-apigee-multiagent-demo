@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<DataCapture name="DC-capture-tokencount" continueOnError="false" enabled="true">
+  <DisplayName>DC-capture-tokencount</DisplayName>
+  <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+  <Capture>
+    <Collect ref="totalToken" default="-1"/>
+    <DataCollector>dc_tokenCount</DataCollector>
+  </Capture>
+  <Capture>
+    <Collect ref="thoughtsToken" default="-1"/>
+    <DataCollector>dc_thoughtsTokenCount</DataCollector>
+  </Capture>
+  <Capture>
+    <Collect ref="inputToken" default="-1"/>
+    <DataCollector>dc_inputToken</DataCollector>
+  </Capture>
+  <Capture>
+    <Collect ref="outputToken" default="-1"/>
+    <DataCollector>dc_outputToken</DataCollector>
+  </Capture>
+</DataCapture>

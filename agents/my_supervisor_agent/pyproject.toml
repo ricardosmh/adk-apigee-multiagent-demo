@@ -1,0 +1,50 @@
+[project]
+name = "my-supervisor-agent"
+version = "0.1.0"
+description = "Supervisor orchestrator agent (A2A client)"
+authors = [{name = "ADK Demo"}]
+dependencies = [
+    # [a2a] for RemoteA2aAgent, [agent-identity] for AgentRegistry's auth
+    # provider; both needed by google.adk.integrations.agent_registry.
+    # mcp itself is also a transitive: AgentRegistry imports
+    # mcp_session_manager which imports `mcp` — but neither extra above pulls
+    # it in, so declare it explicitly.
+    "google-adk[a2a,agent-identity]>=2.3.0,<3.0.0",
+    "mcp>=1.24,<2.0",
+    "google-cloud-aiplatform[agent-engines]>=1.130.0",
+    # Per-user ACL store (app/acl.py; lazy-imported, only when
+    # ACL_BACKEND=firestore and ACL_ENABLED). Inert otherwise.
+    "google-cloud-firestore>=2.16",
+    "python-dotenv",
+    "google-cloud-logging>=3.10",   # named agent-ai-logs + trace attribute
+    "httpx",
+    # OpenTelemetry instrumentation — required for traces to include spans
+    # for outbound HTTP (A2A, MCP), gRPC (Vertex), and Gemini calls. Without
+    # these, the "OTEL traces + prompt/response logging" toggle still emits
+    # framework-level spans but skips the call-site detail you need to find
+    # latency bottlenecks.
+    "opentelemetry-instrumentation-httpx",
+    "opentelemetry-instrumentation-grpc",
+    "opentelemetry-instrumentation-google-genai",
+]
+requires-python = ">=3.11,<3.14"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["app"]
+
+[tool.agents-cli]
+name = "my-supervisor-agent"
+description = "Supervisor agent (orchestrator) for A2A specialists"
+base_template = "adk"
+agent_directory = "app"
+
+[tool.agents-cli.create_params]
+deployment_target = "agent_runtime"
+session_type = "none"
+cicd_runner = "skip"
+include_data_ingestion = false
+datastore = "none"

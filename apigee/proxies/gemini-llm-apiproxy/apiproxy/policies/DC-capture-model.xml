@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<DataCapture name="DC-capture-model" continueOnError="true" enabled="true">
+  <DisplayName>DC-capture-model</DisplayName>
+  <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+  <Capture>
+    <Collect ref="dynamic_model" default="unknown"/>
+    <DataCollector>dc_model</DataCollector>
+  </Capture>
+</DataCapture>

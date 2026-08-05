@@ -1,0 +1,183 @@
+# Apigee provisioning — desired-state manifest (source of truth).
+#
+# The `check` engine diffs this against the live org (read-only); `apply`
+# reconciles to it. NO secret values here — only secret NAMES (values live in
+# Secret Manager). Edit this file to change desired state, then check/apply.
+#
+# Status: FINAL desired state per the PROVISIONING.md audit + decisions.
+
+meta:
+  org: ${projects.apigee}          # Apigee X org (== its GCP project)
+  env: ${apigee_env}               # the ONE env everything scopes to
+  ai_project: ${projects.ai}       # where agents run + where key secrets live
+  deploy_sa: apigee-ai-consumer@${projects.apigee}.iam.gserviceaccount.com   # proxies deploy AS this
+  # The ECOMMERCE proxies deploy as a DEDICATED invoker SA (least privilege:
+  # run.invoker on the services project only). deploy_proxies.sh reads this
+  # (and deploy_sa above) automatically — no env vars needed.
+  ecommerce_deploy_sa: cloud-run-invoker@${projects.apigee}.iam.gserviceaccount.com
+  # vertex_service_agent is DERIVED at run time (service-<AI PROJECT NUMBER>@
+  # gcp-sa-aiplatform...) — no project number lives in any manifest.
+  # deploy_sa needs roles/aiplatform.user on ai_project (cross-project);
+  # deployer needs iam.serviceAccounts.actAs on deploy_sa (deploy time); the
+  # APIGEE SERVICE AGENT needs serviceAccountTokenCreator on BOTH deploy SAs
+  # (run time — it mints the proxies' Google tokens). All reconciled by the
+  # deploySA check rows.
+  # Per-agent RUNTIME SAs are NOT defined here — they live in
+  # agents/runtime-manifest.yaml; serviceAccounts below only NAMES them
+  # so `secrets` can grant secretAccessor (runtime read) alongside
+  # vertex_service_agent (deploy-time SecretRef resolution).
+
+targetServers:                      # env-scoped (env: sandbox-internal)
+  - {name: ts-aiplatform-api,              host: aiplatform.googleapis.com,             port: 443, ssl: true}
+  - {name: ts-aiplatform-api-us-central1,  host: us-central1-aiplatform.googleapis.com, port: 443, ssl: true}
+  # E-commerce services ILB, reached through the org's PSC endpoint attachment
+  # (created by services/provision/provision_services.py). The host is
+  # RESOLVED AT RUN TIME from the endpoint attachment — never hand-pasted.
+  - {name: ts-ecommerce-services, host: "@endpointAttachment:ecommerce-services", port: 80, ssl: false}
+
+# Shared flows the deployed proxies depend on (existence-checked, not managed).
+# Empty since ecommerce-order-management's FC-generate-log was replaced by the
+# repo-standard ML-interaction (one logging mechanism per proxy).
+sharedFlowDeps: []
+
+# Distributed tracing (env-scoped) — OPTIONAL, commented out by default.
+# Exports proxy spans to Cloud Trace in the AI project so the gateway hop
+# shows inside the Cloud Trace console waterfall. The demo needs NOTHING from
+# it: the Trace Explorer, waterfall and all analytics are built on the logs,
+# and the gateway's latency decomposition is in every apigee-ai-logs record.
+# Requires a COMPREHENSIVE (or legacy) environment — INTERMEDIATE/BASE envs
+# 400 the traceConfig API (GETTING_STARTED prerequisites). To enable:
+# uncomment this block AND the cloudtrace.agent grant below, then re-apply.
+# traceConfig:
+#   exporter: CLOUD_TRACE
+#   endpoint: ${projects.ai}    # one pane: BFF + engine traces live there
+#   samplingRate: 0.5           # Apigee's maximum
+
+# Cross-project telemetry writers on ai_project — reconciled by `provision.py
+# apigee` so a fresh environment gets the single-pane observability without
+# hand-run gcloud. Members are SYMBOLIC (portable): deploy_sa = meta.deploy_sa
+# (writes the apigee-interactions log entries as the proxies' deploy SA);
+# apigee_service_agent = service-<ORG_PROJECT_NUMBER>@gcp-sa-apigee.iam.
+# gserviceaccount.com (number resolved at run time; exports traceConfig spans).
+telemetryGrants:
+  - {member: deploy_sa,            role: roles/aiplatform.user}    # proxies call Vertex models
+  - {member: deploy_sa,            role: roles/logging.logWriter}
+  # cloudtrace.agent pairs with the OPTIONAL traceConfig block above —
+  # uncomment together (least privilege: no exporter, no trace-write grant):
+  # - {member: apigee_service_agent, role: roles/cloudtrace.agent}
+  # The ECOMMERCE proxies' ML-interaction writes as THEIR deploy SA — without
+  # this their apigee-ai-logs entries drop silently (continueOnError).
+  - {member: ecommerce_deploy_sa,  role: roles/logging.logWriter}
+  # The ecommerce SERVICES write services-ai-logs into the AI project
+  # (services/*/app/ailog.py) as their runtime SA.
+  - {member: "serviceAccount:ecommerce-sa@${projects.backend}.iam.gserviceaccount.com",
+     role: roles/logging.logWriter}
+
+dataCollectors:                     # ORG-scoped (organizations/{org}/datacollectors)
+  - {name: dc_model,             type: STRING}
+  - {name: dc_user_id,           type: STRING}   # IAP-verified email (per-user attribution)
+  - {name: dc_tokenCount,        type: INTEGER}
+  - {name: dc_thoughtsTokenCount, type: INTEGER}
+  - {name: dc_inputToken,        type: INTEGER}
+  - {name: dc_outputToken,       type: INTEGER}
+
+apiProducts:                        # org-scoped; environments MUST be [sandbox-internal]
+  - name: agents-models-apiproduct
+    approvalType: auto
+    access: private
+    environments: ["${apigee_env}"]
+    proxies: [gemini-llm-apiproxy]
+    llmModels: [gemini-3.1-flash-lite, gemini-3.1-pro-preview]
+    # Native LLM token quota: allowance on the product, ONE COUNTER PER KEY —
+    # each agent has its own app, so this is a per-agent budget.
+    llmQuota: {tokens: 100000, interval: 1, timeUnit: hour}
+  - name: mcp-server-apiproduct
+    approvalType: auto
+    access: private
+    environments: ["${apigee_env}"]   # was sandbox-only → reconcile
+    proxies: [mcp-server-apiproxy]
+  - name: apigee-agents-endpoint
+    approvalType: auto
+    access: private
+    environments: ["${apigee_env}"]
+    proxies: [supervisor-agent-endpoint]
+  - name: unified-llm-enpdoint-apiproduct
+    approvalType: auto
+    access: private
+    environments: ["${apigee_env}"]
+    proxies: [unified-llm-endpoint-sse-apiproxy]   # non-SSE proxy removed
+    llmModels: [gemini-3.1-flash-lite, gemini-3.1-pro-preview, claude-haiku-4-5, claude-sonnet-4-6]
+    # Per-END-USER budget (one app per user -> one counter per user).
+    llmQuota: {tokens: 10000, interval: 5, timeUnit: minute}
+
+# The Apigee developer that owns the agent/BFF apps below — created by
+# `provision.py apigee` if absent (org-generated id; only the email matters).
+developer:
+  email: "${identity.admin_email}"
+
+# apps: one per agent; specialists carry BOTH products (one key = LLM + tools).
+# secret = the Secret Manager secret (in ai_project) that receives this app's key.
+apps:
+  - name: a2a-supervisor-agent
+    products: [agents-models-apiproduct]
+    secret: apigee-key-supervisor
+    consumers: [supervisor → APIGEE_API_KEY]
+  - name: a2a-order-management-agent
+    products: [agents-models-apiproduct, mcp-server-apiproduct]
+    secret: apigee-key-order
+    consumers: [order → APIGEE_API_KEY]
+  - name: a2a-product-management-agent
+    products: [agents-models-apiproduct, mcp-server-apiproduct]
+    secret: apigee-key-product
+    consumers: [product → APIGEE_API_KEY]
+  - name: a2a-customer-management-agent
+    products: [agents-models-apiproduct, mcp-server-apiproduct]
+    secret: apigee-key-customer
+    consumers: [customer → APIGEE_API_KEY]
+  # BFF apps: keys are managed by frontend/service.yaml (Cloud Run secretKeyRef),
+  # not by the agent secret automation. Listed so `check` still verifies them.
+  - name: agents-bff
+    products: [apigee-agents-endpoint]
+    secret: apigee-agent-key           # fed by `secrets`; service.yaml refs it
+    consumers: [BFF → APIGEE_AGENT_API_KEY]
+
+# END USERS of the Direct model view — one Apigee DEVELOPER + APP per person.
+# The per-key llmQuota counter on the unified product = each user's own token
+# budget. The app's owner_email attribute binds key <-> IAP identity: the SSE
+# proxy 403s any call whose x-user-email (IAP-verified, BFF-injected) doesn't
+# match the key owner's — a leaked key is useless to anyone else.
+# Reconciled by `provision.py users`; consumer keys are printed ONCE at app
+# creation and handed to users out of band (an org admin can re-read them).
+endUsers:
+  product: unified-llm-enpdoint-apiproduct
+  emails:                             # add more Direct-view users here
+    - ${identity.admin_email}
+
+# SECRETS BRIDGE — the only thing the gateway side knows about agent identity.
+# Each secret is fed from its app's consumer key (`secrets` command) and grants
+# secretAccessor to the named SAs (+ the Vertex service agent, for deploy-time
+# SecretRef resolution). SA LIFECYCLE (creation, project roles) is the AGENT
+# side's concern: agents/runtime-manifest.yaml + agents/provision/provision_agents.py.
+# tests/test_manifest_consistency.py keeps the two manifests agreeing.
+serviceAccounts:
+  - agent: supervisor
+    name: a2a-supervisor-sa           # @ai_project (created agent-side)
+    secretAccessor: [apigee-key-supervisor]
+  - agent: order
+    name: a2a-order-sa
+    secretAccessor: [apigee-key-order]
+  - agent: product
+    name: a2a-product-sa
+    secretAccessor: [apigee-key-product]
+  - agent: customer
+    name: a2a-customer-sa
+    secretAccessor: [apigee-key-customer]
+  - agent: bff
+    name: bff-runner                  # @ai_project (created agent-side, bff: block)
+    secretAccessor: [apigee-agent-key]
+
+# resources that must NOT exist (check flags them; apply deletes):
+retired:
+  apps:
+    - mcp-server-app                # shared MCP key retired; folded into specialist apps
+    - unified-llm-enpdoint-apps     # shared Direct-view key retired; users bring their OWN key (endUsers)

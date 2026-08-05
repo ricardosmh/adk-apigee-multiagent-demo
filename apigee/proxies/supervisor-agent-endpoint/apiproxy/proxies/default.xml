@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<ProxyEndpoint name="default">
+  <Description/>
+  <FaultRules/>
+  <PreFlow name="PreFlow">
+    <Request>
+      <Step>
+        <Name>VA-VerifyAPIKey</Name>
+      </Step>
+      <Step>
+        <Name>DC-capture-user</Name>
+      </Step>
+      <Step>
+        <Name>AM-set-user-var</Name>
+      </Step>
+      <Step>
+        <Name>EV-extract-session</Name>
+      </Step>
+      <Step>
+        <Name>am-clean-headers</Name>
+      </Step>
+    </Request>
+    <Response/>
+  </PreFlow>
+  <PostFlow name="PostFlow">
+    <Request/>
+    <Response/>
+  </PostFlow>
+  <Flows>
+    <Flow name="streamAgentQuery">
+      <Description/>
+      <Request>
+        <Step>
+          <Name>EV-extract-agent-id-operation</Name>
+        </Step>
+      </Request>
+      <Response/>
+      <Condition>(proxy.pathsuffix MatchesPath "/agents/{agentId}/streamQuery") and (request.verb = "POST")</Condition>
+    </Flow>
+    <Flow name="agentQuery">
+      <Description/>
+      <Request>
+        <Step>
+          <Name>EV-extract-agent-id-operation</Name>
+        </Step>
+      </Request>
+      <Response/>
+      <Condition>(proxy.pathsuffix MatchesPath "/agents/{agentId}/query") and (request.verb = "POST")</Condition>
+    </Flow>
+    <Flow name="invalidMethod">
+      <Description/>
+      <Request>
+        <Step>
+          <Name>RF-invalidMethod</Name>
+        </Step>
+      </Request>
+      <Response/>
+    </Flow>
+  </Flows>
+  <HTTPProxyConnection>
+    <BasePath>/ai-agents</BasePath>
+    <Properties>
+      <Property name="response.streaming.enabled">true</Property>
+    </Properties>
+  </HTTPProxyConnection>
+  <RouteRule name="default">
+    <TargetEndpoint>default</TargetEndpoint>
+  </RouteRule>
+  <PostClientFlow name="PostClientFlow">
+    <Response>
+      <Step>
+        <Name>ML-interaction</Name>
+      </Step>
+    </Response>
+  </PostClientFlow>
+</ProxyEndpoint>

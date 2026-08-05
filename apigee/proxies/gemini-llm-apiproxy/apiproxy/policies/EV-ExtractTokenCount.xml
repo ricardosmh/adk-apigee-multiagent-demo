@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<ExtractVariables name="EV-ExtractTokenCount">
+  <DisplayName>EV-ExtractTokenCount</DisplayName>
+  <!-- Non-streaming path: a plain generateContent response is a single JSON
+       object (application/json), so the SSE EventFlow never runs. Read the
+       usageMetadata here so sub-agent (A2A message:send) model calls are
+       metered too. Sets the same vars DC-capture-tokencount collects. -->
+  <Source>response</Source>
+  <JSONPayload>
+    <Variable name="inputToken">
+      <JSONPath>$.usageMetadata.promptTokenCount</JSONPath>
+    </Variable>
+    <Variable name="outputToken">
+      <JSONPath>$.usageMetadata.candidatesTokenCount</JSONPath>
+    </Variable>
+    <Variable name="totalToken">
+      <JSONPath>$.usageMetadata.totalTokenCount</JSONPath>
+    </Variable>
+    <Variable name="thoughtsToken">
+      <JSONPath>$.usageMetadata.thoughtsTokenCount</JSONPath>
+    </Variable>
+  </JSONPayload>
+  <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+</ExtractVariables>

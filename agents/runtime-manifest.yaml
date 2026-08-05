@@ -1,0 +1,152 @@
+# Agent runtime requirements — desired state for the AGENT side (AI project).
+#
+# Consumers:
+#   - agents/provision/provision_agents.py — check/apply: create each SA,
+#     bind its roles, grant staging-bucket access + the deployer's actAs.
+#     (also: required APIs, the staging bucket + Vertex-agent read grant.)
+#   - agents/provision/deploy_agents.py — the central deploy tool: deploy /
+#     --check (live engines vs this file) / --cleanup (stale generations).
+#   - agents/deploy_common.preflight_identity() — at deploy, validates the live
+#     SA/roles/secret access AND cross-checks the agent's .env against this file
+#     (wrong AGENT_RUNNER_SA or APIGEE_API_KEY_SECRET = caught drift).
+#   - tests/test_manifest_consistency.py — keeps this file, the Apigee
+#     provisioning manifest (apigee/provision/manifest.yaml), and the
+#     .env.examples agreeing on SA + secret names.
+#
+# The GATEWAY side (Apigee products/apps, secrets fed from app keys) lives in
+# apigee/provision/manifest.yaml. Split rationale: apigee/PROVISIONING.md.
+
+project: ${projects.ai}
+
+# Runtime env every ENGINE gets at deploy time (a per-agent env: block extends
+# or overrides; a local .env overrides everything — .env files are now purely
+# OPTIONAL, for experiments like a GEMINI_MODEL bump).
+engine_env:
+  APIGEE_LLM_PROXY_URL: https://internal.apigee.com/aiplatform
+  APIGEE_LLM_INSECURE_TLS: "true"
+  APIGEE_MCP_URL: https://internal.apigee.com/mcp   # specialists; supervisor ignores
+
+agents:
+  supervisor:
+    dir: my_supervisor_agent
+    sa: a2a-supervisor-sa
+    roles:                            # granted on `project`
+      - roles/aiplatform.user         # call Vertex APIs incl. specialist engines (A2A)
+      - roles/agentregistry.viewer    # runtime sub-agent discovery — SUPERVISOR ONLY
+      - roles/datastore.viewer        # Datastore reads — SUPERVISOR ONLY
+      - roles/cloudtrace.agent        # OTEL span export
+      - roles/logging.logWriter       # OTEL log events
+    secret: apigee-key-supervisor     # Secret Manager secret holding its Apigee key
+    env: {ACL_ENABLED: "1", ACL_BACKEND: firestore}   # per-user ACL ON (validated posture)
+    description: "Supervisor coordinator agent that delegates to A2A specialists."
+  order:
+    dir: my_order_agent
+    sa: a2a-order-sa
+    roles: [roles/aiplatform.user, roles/cloudtrace.agent, roles/logging.logWriter]
+    secret: apigee-key-order
+    description: "Order management specialist (A2A) — orders, fulfillment, line items, status."
+  product:
+    dir: my_product_agent
+    sa: a2a-product-sa
+    roles: [roles/aiplatform.user, roles/cloudtrace.agent, roles/logging.logWriter]
+    secret: apigee-key-product
+    description: "Product catalog specialist (A2A) — catalog search, product details, stock."
+  customer:
+    dir: my_customer_agent
+    sa: a2a-customer-sa
+    roles: [roles/aiplatform.user, roles/cloudtrace.agent, roles/logging.logWriter]
+    secret: apigee-key-customer
+    description: "Customer profile specialist (A2A) — accounts, profiles, addresses, status."
+
+# Per-user sub-agent ACL (enforced in the supervisor: app/acl.py, read per turn
+# = instant revoke). Keys are IAP-VERIFIED emails, lowercase. This block is the
+# SEED — day-2 management (users/roles) happens through the BFF admin view;
+# provisioning only ensures the database + these docs exist (it never deletes
+# and merges user roles additively, so UI-made changes survive re-runs).
+acl:
+  database: "(default)"
+  location: ${regions.ai}          # Firestore location (co-located with engines)
+  roles:
+    admin:
+      agents: ["*"]                 # wildcard = every agent, present and future
+      is_admin: true                # unlocks the BFF management view (phase 2)
+  users:
+    ${identity.admin_email}: [admin]   # first admin — MUST be the email IAP verifies
+
+# The BFF's runtime identity (Cloud Run service agent-bff). Declared here so
+# its grants are provisioned like everything else. datastore.user = the admin
+# API WRITES the ACL docs (the supervisor only reads: datastore.viewer);
+# agentregistry.viewer = the admin view lists agents to offer as checkboxes;
+# logging.viewer = the admin Trace Explorer reads back the four ai-logs.
+bff:
+  sa: bff-runner
+  # Users allowed through IAP to the BFF (roles/iap.httpsResourceAccessor,
+  # granted by deploy_frontend.py after apply). The OAuth consent screen is
+  # the ONE manual IAP step on a fresh project (see agents/provision/README).
+  iap_members:                        # add more user:/group: members as needed
+    - user:${identity.admin_email}
+  roles:
+    - roles/datastore.user
+    - roles/agentregistry.viewer
+    - roles/logging.logWriter       # named front-ai-logs (Cloud Logging API writes)
+    - roles/logging.viewer          # admin Trace Explorer READS the four ai-logs
+
+infra:
+  # Google APIs the agent stack needs enabled on `project`.
+  services:
+    - aiplatform.googleapis.com
+    - cloudresourcemanager.googleapis.com
+    - storage.googleapis.com
+    - agentregistry.googleapis.com
+    - cloudtrace.googleapis.com      # OTEL span export
+    - logging.googleapis.com         # OTEL log events + the four *-ai-logs
+    # NOTE: the OPTIONAL analytics module (analytics/) owns its own prerequisites
+    # (bigquery + monitoring APIs) — enabled by analytics/provision_analytics.py,
+    # deliberately NOT here, so the base stack doesn't require them.
+    - firestore.googleapis.com       # per-user ACL store (acl: block above)
+    - compute.googleapis.com         # ai-vpc + PSC plumbing
+    - dns.googleapis.com             # private zone for internal.apigee.com
+    - artifactregistry.googleapis.com  # BFF image repo
+    - run.googleapis.com             # the BFF
+    - cloudbuild.googleapis.com      # BFF image builds
+    - secretmanager.googleapis.com   # per-agent Apigee keys
+    - iap.googleapis.com             # BFF access control
+
+  # The AI project's network: engines egress through a PSC INTERFACE into
+  # ai-vpc (network attachment, engine region) and the BFF uses Direct VPC
+  # egress (bff-egress, gateway region); both reach Apigee privately via ONE
+  # PSC endpoint at internal.apigee.com. Cross-region works because ai-vpc
+  # routes globally and the endpoint has global access (docs/PRIVATE_APIGEE.md).
+  network:
+    vpc: ai-vpc                      # GLOBAL routing (required for cross-region)
+    subnets:
+      - {name: bff-egress,          range: 10.0.10.0/24, region: "${regions.gateway}"}
+      - {name: agent-engine-subnet, range: 10.0.12.0/24, region: "${regions.ai}"}
+    # Agent Engine PSC interfaces attach here (must be in the ENGINE region).
+    network_attachment:
+      name: agent-engine-attachment
+      subnet: agent-engine-subnet
+      region: ${regions.ai}
+    # Northbound INTO Apigee: reserved IP + PSC endpoint to the Apigee
+    # instance's service attachment (resolved from the org at run time) + a
+    # private DNS zone so internal.apigee.com resolves inside ai-vpc.
+    apigee_psc:
+      org: ${projects.apigee}
+      endpoint: {name: ea-apigee-internal-endpoint, address: 10.0.10.2,
+                 subnet: bff-egress, region: "${regions.gateway}"}
+      dns: {zone: apigee-internal, domain: apigee.com., record: internal.apigee.com.}
+    artifact_repo: {name: bff, region: "${regions.gateway}"}   # BFF images
+  # Engines run here (Agent Engine is NOT in southamerica-west1; Apigee is
+  # reached privately via PSC). Override with $REGION.
+  region: ${regions.ai}
+  # Staging bucket (deploy pickle + telemetry). Default derives from the
+  # project; $STAGING_BUCKET still overrides. The role is granted to each
+  # runner SA AND to the Vertex control-plane service agent (deploy pickle).
+  staging_bucket: ${projects.ai}-a2a-demo-staging
+  # Fresh post-2024 projects run BFF image builds as the COMPUTE DEFAULT SA,
+  # which starts with no roles (seen live: 403 on the cloudbuild source
+  # bucket). Same fix as the services project.
+  build_sa_role: roles/cloudbuild.builds.builder
+  staging_bucket_role: roles/storage.objectAdmin
+  # The deploying user needs actAs on each SA for service_account= to be accepted.
+  deployer_role: roles/iam.serviceAccountUser

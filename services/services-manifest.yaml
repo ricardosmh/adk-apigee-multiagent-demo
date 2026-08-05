@@ -1,0 +1,140 @@
+# E-commerce services project — desired state for the SERVICES side.
+#
+# ONE fresh GCP project hosts the Cloud SQL MySQL database AND the three
+# Cloud Run services (customers/orders/products), fronted by a regional
+# INTERNAL Application Load Balancer and exposed to Apigee through a PSC
+# service attachment -> Apigee endpoint attachment -> TargetServer
+# ts-ecommerce-services (declared in apigee/provision/manifest.yaml with a
+# runtime-resolved "@endpointAttachment:" host).
+#
+# Consumers:
+#   - services/provision/provision_services.py — check/apply for everything
+#     below EXCEPT the Cloud Run deploys; plus the explicit `seed` mode
+#     (imports the sample data — a DESTRUCTIVE RESET, see README).
+#   - services/provision/deploy_services.py — deploys the three services
+#     (--source builds), grants the Apigee invoker, verifies audiences.
+#   - tests/test_manifest_consistency.py — cross-checks identity.invoker_sa
+#     against apigee/provision/manifest.yaml meta.deploy_sa, and the proxy
+#     bundles' GoogleIDToken audiences against services.*.audience.
+#
+# Fresh-project bootstrap order: services/provision/README.md.
+
+# The services project id (any valid GCP id — the MySQL IAM username is just
+# the SA local part 'ecommerce-sa'; Cloud SQL MYSQL truncates the domain).
+project: ${projects.backend}
+region: ${regions.backend}
+
+apis:
+  - run.googleapis.com
+  - sqladmin.googleapis.com
+  - compute.googleapis.com
+  - cloudbuild.googleapis.com          # gcloud run deploy --source
+  - artifactregistry.googleapis.com
+  - iam.googleapis.com
+  - cloudresourcemanager.googleapis.com
+  - storage.googleapis.com             # seed staging bucket
+  - logging.googleapis.com
+
+network:
+  vpc: serverless-vpc
+  subnets:
+    - {name: serverless-subnet, range: 10.0.0.0/24}
+    # Required (one ACTIVE per VPC+region) for the regional internal ALB.
+    - {name: proxy-only-subnet, range: 10.0.1.0/24, purpose: REGIONAL_MANAGED_PROXY}
+    # NAT subnet for the ILB's PSC service attachment (Apigee southbound).
+    - {name: psc-nat-subnet,    range: 10.0.2.0/24, purpose: PRIVATE_SERVICE_CONNECT}
+  # NO firewall rules: serverless-NEG backends take no health checks (the
+  # legacy allow-ilb-health-checks rule was dead weight).
+
+identity:
+  runtime_sa: ecommerce-sa             # runs the services; IAM DB auth principal
+  roles:                               # on `project`
+    - roles/cloudsql.client
+    - roles/cloudsql.instanceUser      # IAM database authentication
+    - roles/logging.logWriter
+  # Post-2024 fresh projects build `--source` deploys as the COMPUTE DEFAULT
+  # SA, which starts with no roles when automatic grants are disabled.
+  build_sa_role: roles/cloudbuild.builds.builder   # -> <PN>-compute@developer.gserviceaccount.com
+  # The SA the THREE ECOMMERCE PROXIES deploy as (Apigee mints their
+  # GoogleIDToken as the proxy's deployment SA) — dedicated, least-privilege:
+  # its ONLY power is run.invoker on these services. Must equal
+  # apigee/provision/manifest.yaml meta.ecommerce_deploy_sa (test-enforced;
+  # deploy_proxies.sh reads it from there automatically).
+  invoker_sa: cloud-run-invoker@${projects.apigee}.iam.gserviceaccount.com
+
+database:
+  instance: ecommerce-sql
+  # PSC + IAM auth must both be set AT CREATE (PSC cannot be retrofitted):
+  # --enable-private-service-connect --allowed-psc-projects=<project>
+  # --no-assign-ip --database-flags=cloudsql_iam_authentication=on
+  version: MYSQL_8_0
+  tier: db-custom-1-3840
+  edition: enterprise
+  name: database                       # the dump's CREATE DATABASE name
+  # Reserved consumer address + forwarding rule to the instance's
+  # pscServiceAttachmentLink — pins the IP the services connect to.
+  psc_endpoint: {name: psc-ecommerce-sql, address: 10.0.0.5}
+  # IAM DB username = 'ecommerce-sa' (Cloud SQL MYSQL truncates the whole
+  # domain; the @<project>.iam long form is the POSTGRES convention).
+  seed:                                # paths relative to services/
+    bucket_suffix: -ecommerce-seed     # bucket = <project><suffix>
+    schema: seed/schema.sql            # DDL: DROP+CREATE the 4 tables
+    data: seed/sample-data.sql         # INSERTs: 100 customers, 100 products,
+                                       # 59 orders, 177 line items
+    # (grants.sql for the IAM DB user is GENERATED at seed time)
+
+services:
+  customers:
+    dir: customers-service
+    audience: https://customers.ecommerce.internal   # Cloud Run custom audience
+  orders:
+    dir: orders-service
+    audience: https://orders.ecommerce.internal
+    # PRODUCTS_SERVICE_URL deliberately NOT set: the orders->products call is
+    # unauthenticated in app code and would 403 through the IAM-protected ILB,
+    # silently falling back to the shared DB anyway. Follow-up in README.
+  products:
+    dir: products-service
+    audience: https://products.ecommerce.internal
+  # Env shared by all three (DB_USER and DB_NAME are derived from database:).
+  env:
+    DB_HOST: 10.0.0.5
+    USE_IAM_AUTH: "true"
+    DB_HOST_IS_PSC: "true"
+    # Single-pane telemetry: app/ailog.py writes services-ai-logs INTO the AI
+    # project (runtime SA needs logging.logWriter there — granted by the
+    # apigee manifest's telemetryGrants).
+    AI_LOG_PROJECT: ${projects.ai}
+
+lb:                                     # regional INTERNAL Application LB
+  name: rilb-ecommerce-services         # url-map + target proxy + fwd rule
+  address: {name: ip-rilb-ecommerce, ip: 10.0.0.11}
+  port: 80
+  global_access: true
+  default_backend: customers
+  backends:                             # backend service + its serverless NEG
+    customers: {backend: backend-ecommerce-customers, neg: sneg-ecommerce-customers}
+    orders:    {backend: backend-ecommerce-orders,    neg: sneg-ecommerce-orders}
+    products:  {backend: backend-ecommerce-products,  neg: sneg-ecommerce-products}
+  path_rules:
+    /customer-management/*: customers
+    /order-management/*:    orders
+    /product-management/*:  products
+
+psc:                                    # Apigee southbound chain
+  service_attachment:
+    name: sa-ecommerce-services
+    nat_subnet: psc-nat-subnet
+    # ACCEPT_MANUAL with an AUTOMATED two-phase accept: the endpoint
+    # attachment's consumer is Apigee's Google-managed TENANT project (NOT
+    # the org project — putting the org project in the accept list leaves the
+    # connection PENDING forever). Its id is unknowable in advance, so apply
+    # creates the attachment, reads the PENDING consumer from the service
+    # attachment's connectedEndpoints, and accepts THAT project.
+    # (ACCEPT_AUTOMATIC also supported if you prefer no accept list.)
+    connection_preference: ACCEPT_MANUAL
+  apigee:
+    org: ${projects.apigee}
+    endpoint_attachment: ecommerce-services
+    # -> apigee/provision/manifest.yaml targetServer ts-ecommerce-services
+    #    (host: "@endpointAttachment:ecommerce-services", resolved at run time)

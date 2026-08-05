@@ -1,0 +1,35 @@
+# THE environment file — the single place naming the GCP projects this demo
+# runs in. Every manifest references these values as ${...} tokens (resolved
+# by demo_env.load_manifest, which all provisioning/deploy tools use), so
+# replicating the demo in new projects means editing THIS FILE ONLY, then
+# running the bootstrap sequence (services/provision/README.md + the per-side
+# READMEs).
+#
+# A guard test (tests/test_demo_env.py) fails if any manifest reintroduces a
+# hardcoded project id.
+
+# ── FILL THESE IN (Step 0 of docs/GETTING_STARTED.md) ────────────────────────
+# Replace the placeholders with your own values (no spaces — the values are
+# parsed as single tokens). apigee_env and the regions below are examples:
+# set them to YOUR Apigee environment name and regions.
+projects:
+  apigee: your-apigee-project-id          # Apigee X org (org name == project id)
+  ai: your-ai-project-id                  # agents + BFF + single-pane telemetry
+  backend: your-backend-project-id        # e-commerce services + Cloud SQL
+
+apigee_env: your-apigee-env-name          # the ONE Apigee environment
+
+identity:
+  # YOU — the Google account you'll sign in with. Becomes the IAP member on
+  # the BFF, the seed ACL admin, the Apigee developer owning the agent apps,
+  # and the first Direct-view end user. Additional users are added in the
+  # manifests (iap_members / endUsers.emails) or day-2 via the BFF admin view.
+  admin_email: your-admin-email@example.com
+
+regions:
+  ai: us-central1                         # Agent Engine + Firestore + registry
+  gateway: southamerica-west1             # Apigee runtime + the BFF (Cloud Run)
+  backend: southamerica-west1             # services + Cloud SQL + ILB + PSC
+                                          # (independent of gateway: the Apigee
+                                          # endpoint attachment matches the
+                                          # SERVICE ATTACHMENT's region)

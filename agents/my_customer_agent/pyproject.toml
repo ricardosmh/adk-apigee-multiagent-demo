@@ -1,0 +1,44 @@
+[project]
+name = "my-customer-agent"
+version = "0.1.0"
+description = "Customer profile specialist (A2A)"
+authors = [{name = "ADK Demo"}]
+dependencies = [
+    "google-adk>=2.3.0,<3.0.0",
+    "mcp>=1.24,<2.0",
+    "a2a-sdk~=0.3.22",
+    "nest-asyncio>=1.6.0,<2.0.0",
+    "google-cloud-aiplatform[agent-engines]>=1.130.0",
+    "python-dotenv",
+    "google-cloud-logging>=3.10",   # named agent-ai-logs + trace attribute
+    # OpenTelemetry instrumentation — required for traces to include spans
+    # for outbound HTTP (A2A, MCP), gRPC (Vertex), and Gemini calls. Without
+    # these, the "OTEL traces + prompt/response logging" toggle still emits
+    # framework-level spans but skips the call-site detail you need to find
+    # latency bottlenecks.
+    "opentelemetry-instrumentation-httpx",
+    "opentelemetry-instrumentation-grpc",
+    "opentelemetry-instrumentation-google-genai",
+]
+requires-python = ">=3.11,<3.14"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["app"]
+
+[tool.agents-cli]
+name = "my-customer-agent"
+description = "Customer profile specialist with A2A protocol"
+base_template = "adk_a2a"
+agent_directory = "app"
+
+[tool.agents-cli.create_params]
+deployment_target = "agent_runtime"
+session_type = "in_memory"
+cicd_runner = "skip"
+include_data_ingestion = false
+is_a2a = true
+datastore = "none"

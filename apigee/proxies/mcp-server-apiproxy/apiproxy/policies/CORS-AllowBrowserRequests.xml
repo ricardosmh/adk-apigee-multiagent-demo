@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<CORS async="false" continueOnError="false" enabled="true" name="CORS-AllowBrowserRequests">
+  <DisplayName>CORS policy</DisplayName>
+  <AllowOrigins>{request.header.origin}</AllowOrigins>
+  <AllowMethods>GET, PUT, POST, DELETE, OPTIONS</AllowMethods>
+  <AllowHeaders>origin, x-requested-with, x-api-key, accept, content-type, authorization, mcp-protocol-version, country</AllowHeaders>
+  <ExposeHeaders>*</ExposeHeaders>
+  <MaxAge>3628800</MaxAge>
+  <AllowCredentials>true</AllowCredentials>
+  <GeneratePreflightResponse>true</GeneratePreflightResponse>
+  <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+</CORS>

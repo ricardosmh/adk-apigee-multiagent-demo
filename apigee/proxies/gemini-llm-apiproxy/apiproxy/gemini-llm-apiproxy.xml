@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<APIProxy revision="42" name="gemini-llm-apiproxy">
+  <DisplayName/>
+  <Description/>
+  <CreatedAt>1780671471997</CreatedAt>
+  <LastModifiedAt>1780671493437</LastModifiedAt>
+  <BasePaths>/aiplatform/v1beta</BasePaths>
+  <Policies>
+    <Policy>AM-set-user-var</Policy>
+    <Policy>ML-interaction</Policy>
+    <Policy>LTQ-enforce</Policy>
+    <Policy>LTQ-count</Policy>
+    <Policy>DC-capture-user</Policy>
+    <Policy>DC-capture-model</Policy>
+    <Policy>DC-capture-tokencount</Policy>
+    <Policy>EV-ExtractRequest</Policy>
+    <Policy>EV-ExtractTokenCount</Policy>
+    <Policy>JS-extract-tokens</Policy>
+    <Policy>VA-VerifyAPIKey</Policy>
+    <Policy>am-clean-headers</Policy>
+    <Policy>JS-strip-part-metadata</Policy>
+  </Policies>
+  <ProxyEndpoints>
+    <ProxyEndpoint>default</ProxyEndpoint>
+  </ProxyEndpoints>
+  <Resources>
+    <Resource>jsc://extract-tokens.js</Resource>
+    <Resource>jsc://strip.js</Resource>
+  </Resources>
+  <TargetEndpoints>
+    <TargetEndpoint>te-gemini-llm</TargetEndpoint>
+  </TargetEndpoints>
+</APIProxy>

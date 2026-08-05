@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<ProxyEndpoint name="default">
+  <Description/>
+  <FaultRules/>
+  <PreFlow name="PreFlow">
+    <Request>
+      <Step>
+        <Name>VA-VerifyAPIKey</Name>
+      </Step>
+      <Step>
+        <Name>DC-capture-user</Name>
+      </Step>
+      <Step>
+        <Name>AM-set-user-var</Name>
+      </Step>
+      <Step>
+        <Name>RF-key-owner-mismatch</Name>
+        <Condition>(verifyapikey.VA-VerifyAPIKey.app.owner_email Is null) or (verifyapikey.VA-VerifyAPIKey.app.owner_email != request.header.x-user-email)</Condition>
+      </Step>
+    </Request>
+    <Response/>
+  </PreFlow>
+  <PostFlow name="PostFlow">
+    <Request/>
+    <Response/>
+  </PostFlow>
+  <Flows>
+    <Flow name="trigger_model">
+      <Description/>
+      <Request/>
+      <Response/>
+      <Condition>(proxy.pathsuffix MatchesPath "/prompt") and (request.verb = "POST")</Condition>
+    </Flow>
+  </Flows>
+  <EventFlow name="EventFlow" content-type="text/event-stream">
+    <Response/>
+  </EventFlow>
+  <HTTPProxyConnection>
+    <BasePath>/llm-stream</BasePath>
+    <Properties>
+      <Property name="response.streaming.enabled">true</Property>
+    </Properties>
+  </HTTPProxyConnection>
+  <RouteRule name="te-gemini">
+    <TargetEndpoint>te-gemini-llm</TargetEndpoint>
+    <Condition>(request.header.publisher = "gemini") or (request.header.publisher = "Gemini")</Condition>
+  </RouteRule>
+  <RouteRule name="te-claude">
+    <TargetEndpoint>te-claude-llm</TargetEndpoint>
+    <Condition>(request.header.publisher = "anthropic") or (request.header.publisher = "Anthropic")</Condition>
+  </RouteRule>
+  <PostClientFlow name="PostClientFlow">
+    <Response>
+      <Step>
+        <Name>ML-interaction</Name>
+      </Step>
+    </Response>
+  </PostClientFlow>
+</ProxyEndpoint>

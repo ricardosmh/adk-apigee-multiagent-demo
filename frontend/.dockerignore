@@ -1,0 +1,16 @@
+# Keep the build context lean and secret-free.
+.env
+.env.*
+env.yaml
+service.yaml
+deploy.sh
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+*.log
+.DS_Store

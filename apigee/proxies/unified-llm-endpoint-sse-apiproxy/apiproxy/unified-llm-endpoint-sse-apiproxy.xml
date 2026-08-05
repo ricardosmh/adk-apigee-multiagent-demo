@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<APIProxy revision="6" name="unified-llm-endpoint-sse-apiproxy">
+  <DisplayName/>
+  <Description/>
+  <CreatedAt>1780606795411</CreatedAt>
+  <LastModifiedAt>1780606843302</LastModifiedAt>
+  <BasePaths>/llm-stream</BasePaths>
+  <Policies>
+    <Policy>AM-set-user-var</Policy>
+    <Policy>ML-interaction</Policy>
+    <Policy>LTQ-enforce</Policy>
+    <Policy>LTQ-count</Policy>
+    <Policy>RF-key-owner-mismatch</Policy>
+    <Policy>DC-capture-user</Policy>
+    <Policy>VA-VerifyAPIKey</Policy>
+    <Policy>am-clean-headers</Policy>
+    <Policy>AM-PathSuffixFalse</Policy>
+    <Policy>AM-set-haiku-model</Policy>
+    <Policy>AM-set-sonnet-model</Policy>
+    <Policy>AM-set-flash-model</Policy>
+    <Policy>AM-set-gemini-3.1-pro-preview-model</Policy>
+    <Policy>JS-extract-tokens</Policy>
+    <Policy>DC-capture-tokencount</Policy>
+    <Policy>DC-capture-model</Policy>
+  </Policies>
+  <ProxyEndpoints>
+    <ProxyEndpoint>default</ProxyEndpoint>
+  </ProxyEndpoints>
+  <Resources>
+    <Resource>jsc://extract-tokens.js</Resource>
+  </Resources>
+  <TargetEndpoints>
+    <TargetEndpoint>te-claude-llm</TargetEndpoint>
+    <TargetEndpoint>te-gemini-llm</TargetEndpoint>
+  </TargetEndpoints>
+</APIProxy>

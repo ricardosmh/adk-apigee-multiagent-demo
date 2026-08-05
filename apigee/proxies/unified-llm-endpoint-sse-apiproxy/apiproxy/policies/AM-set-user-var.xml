@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<AssignMessage continueOnError="true" enabled="true" name="AM-set-user-var">
+  <DisplayName>AM-set-user-var</DisplayName>
+  <!-- Snapshot the caller identity into a flow VARIABLE before am-clean-headers
+       strips the x-user-email request header - ML-interaction (PostClientFlow)
+       runs long after the header is gone. -->
+  <AssignVariable>
+    <Name>user_email_var</Name>
+    <Ref>request.header.x-user-email</Ref>
+    <Value>anonymous</Value>
+  </AssignVariable>
+  <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+</AssignMessage>

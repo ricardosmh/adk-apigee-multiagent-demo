@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<APIProxy revision="25" name="mcp-server-apiproxy">
+  <DisplayName/>
+  <Description/>
+  <CreatedAt>1780515513492</CreatedAt>
+  <LastModifiedAt>1780515513492</LastModifiedAt>
+  <BasePaths>/mcp</BasePaths>
+  <Policies>
+    <Policy>ML-interaction</Policy>
+    <Policy>CORS-AllowBrowserRequests</Policy>
+    <Policy>VA-verify-x-api-key</Policy>
+  </Policies>
+  <ProxyEndpoints>
+    <ProxyEndpoint>default</ProxyEndpoint>
+  </ProxyEndpoints>
+  <Resources>
+    <Resource>oas://user-management-apiproxy.yaml</Resource>
+    <Resource>oas://user-department-apiproxy.yaml</Resource>
+    <Resource>oas://ecommerce-order-management.yaml</Resource>
+    <Resource>oas://ecommerce-product-management.yaml</Resource>
+    <Resource>oas://ecommerce-customer-management.yaml</Resource>
+  </Resources>
+  <TargetEndpoints>
+    <TargetEndpoint>default</TargetEndpoint>
+  </TargetEndpoints>
+</APIProxy>

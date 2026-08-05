@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<ProxyEndpoint name="default">
+  <Description/>
+  <FaultRules/>
+  <PreFlow name="PreFlow">
+    <Request/>
+    <Response/>
+  </PreFlow>
+  <PostFlow name="PostFlow">
+    <Request/>
+    <Response/>
+  </PostFlow>
+  <Flows>
+    <Flow name="health_check_health_get">
+      <Description>Health Check</Description>
+      <Request/>
+      <Response/>
+      <Condition>(proxy.pathsuffix MatchesPath "/health") and (request.verb = "GET")</Condition>
+    </Flow>
+    <Flow name="get_orders_orders_get">
+      <Description>Get Orders</Description>
+      <Request/>
+      <Response/>
+      <Condition>(proxy.pathsuffix MatchesPath "/orders") and (request.verb = "GET")</Condition>
+    </Flow>
+    <Flow name="create_order_orders_post">
+      <Description>Create Order</Description>
+      <Request/>
+      <Response/>
+      <Condition>(proxy.pathsuffix MatchesPath "/orders") and (request.verb = "POST")</Condition>
+    </Flow>
+    <Flow name="get_order_orders__order_id__get">
+      <Description>Get Order</Description>
+      <Request/>
+      <Response/>
+      <Condition>(proxy.pathsuffix MatchesPath "/orders/{order_id}") and (request.verb = "GET")</Condition>
+    </Flow>
+    <Flow name="get_customer_orders_customers__customer_id__orders_get">
+      <Description>Get Customer Orders</Description>
+      <Request/>
+      <Response/>
+      <Condition>(proxy.pathsuffix MatchesPath "/customers/{customer_id}/orders") and (request.verb = "GET")</Condition>
+    </Flow>
+    <Flow name="update_order_status_orders__order_id__status_put">
+      <Description>Update Order Status</Description>
+      <Request/>
+      <Response/>
+      <Condition>(proxy.pathsuffix MatchesPath "/orders/{order_id}/status") and (request.verb = "PUT")</Condition>
+    </Flow>
+  </Flows>
+  <PostClientFlow name="PostClientFlow">
+    <Request/>
+    <Response>
+      <Step>
+        <Name>ML-interaction</Name>
+      </Step>
+    </Response>
+  </PostClientFlow>
+  <HTTPProxyConnection>
+    <BasePath>/order-management</BasePath>
+    <Properties/>
+  </HTTPProxyConnection>
+  <RouteRule name="default">
+    <TargetEndpoint>default</TargetEndpoint>
+  </RouteRule>
+</ProxyEndpoint>

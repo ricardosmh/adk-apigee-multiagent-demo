@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<ProxyEndpoint name="default">
+  <Description/>
+  <FaultRules/>
+  <PreFlow name="PreFlow">
+    <Request/>
+    <Response/>
+  </PreFlow>
+  <PostFlow name="PostFlow">
+    <Request/>
+    <Response/>
+  </PostFlow>
+  <Flows>
+    <Flow name="checkCustomerHealth">
+      <Description>Health Check</Description>
+      <Request/>
+      <Response/>
+      <Condition>(proxy.pathsuffix MatchesPath "/customer-management/health") and (request.verb = "GET")</Condition>
+    </Flow>
+    <Flow name="listCustomers">
+      <Description>Get Customers</Description>
+      <Request/>
+      <Response/>
+      <Condition>(proxy.pathsuffix MatchesPath "/customer-management/customers") and (request.verb = "GET")</Condition>
+    </Flow>
+    <Flow name="createCustomer">
+      <Description>Create Customer</Description>
+      <Request/>
+      <Response/>
+      <Condition>(proxy.pathsuffix MatchesPath "/customer-management/customers") and (request.verb = "POST")</Condition>
+    </Flow>
+    <Flow name="getCustomerById">
+      <Description>Get Customer</Description>
+      <Request/>
+      <Response/>
+      <Condition>(proxy.pathsuffix MatchesPath "/customer-management/customers/{customer_id}") and (request.verb = "GET")</Condition>
+    </Flow>
+    <Flow name="updateCustomerById">
+      <Description>Update Customer</Description>
+      <Request/>
+      <Response/>
+      <Condition>(proxy.pathsuffix MatchesPath "/customer-management/customers/{customer_id}") and (request.verb = "PUT")</Condition>
+    </Flow>
+    <Flow name="deleteCustomerById">
+      <Description>Delete Customer</Description>
+      <Request/>
+      <Response/>
+      <Condition>(proxy.pathsuffix MatchesPath "/customer-management/customers/{customer_id}") and (request.verb = "DELETE")</Condition>
+    </Flow>
+  </Flows>
+  <PostClientFlow name="PostClientFlow">
+    <Request/>
+    <Response>
+      <Step>
+        <Name>ML-interaction</Name>
+      </Step>
+    </Response>
+  </PostClientFlow>
+  <HTTPProxyConnection>
+    <BasePath>/customer-management</BasePath>
+    <Properties/>
+  </HTTPProxyConnection>
+  <RouteRule name="default">
+    <TargetEndpoint>default</TargetEndpoint>
+  </RouteRule>
+</ProxyEndpoint>

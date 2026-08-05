@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<AssignMessage continueOnError="false" enabled="true" name="AM-set-haiku-model">
+  <DisplayName>AM-set-haiku-model</DisplayName>
+  <Properties/>
+  <AssignVariable>
+    <Name>dynamic_model</Name>
+    <Value>claude-haiku-4-5</Value>
+    <!-- This is model value -->
+  </AssignVariable>
+  <IgnoreUnresolvedVariables>false</IgnoreUnresolvedVariables>
+  <AssignTo createNew="false" transport="http" type="request"/>
+</AssignMessage>

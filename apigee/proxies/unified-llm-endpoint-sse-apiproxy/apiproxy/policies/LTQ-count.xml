@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<LLMTokenQuota name="LTQ-count" continueOnError="true" enabled="true">
+  <DisplayName>LTQ-count</DisplayName>
+  <!-- RESPONSE-side increment: adds the OUTPUT tokens of this call (the
+       outputToken variable set by JS-extract-tokens / EV-ExtractTokenCount)
+       to the shared per-key counter. continueOnError: metering must never
+       break a response already streaming back. -->
+  <SharedName>user-output-tokens</SharedName>
+  <CountOnly>true</CountOnly>
+  <Identifier ref="verifyapikey.VA-VerifyAPIKey.client_id"/>
+  <Allow count="10000" countRef="verifyapikey.VA-VerifyAPIKey.apiproduct.developer.llmQuota.limit"/>
+  <Interval ref="verifyapikey.VA-VerifyAPIKey.apiproduct.developer.llmQuota.interval">5</Interval>
+  <TimeUnit ref="verifyapikey.VA-VerifyAPIKey.apiproduct.developer.llmQuota.timeunit">minute</TimeUnit>
+  <!-- REQUIRED: without it the policy defaults to jsonPath($.model) on the
+       REQUEST body (absent in Gemini/Anthropic shapes) and 500s. dynamic_model
+       is set before this policy runs (EV-ExtractRequest / AM-set-*-model). -->
+  <LLMModelSource>{dynamic_model}</LLMModelSource>
+  <Distributed>true</Distributed>
+  <Synchronous>true</Synchronous>
+  <LLMTokenUsageSource>{firstnonnull(outputToken,0)}</LLMTokenUsageSource>
+</LLMTokenQuota>

@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Apigee LLM + Agent</title>
+    <!-- ?v= busts caches populated BEFORE the server sent no-cache headers;
+         bump it when shipping UI changes that must land atomically. -->
+    <link rel="stylesheet" href="style.css?v=4" />
+  </head>
+  <body class="view-direct">
+    <header>
+      <div class="brand">
+        <span class="dot"></span>
+        <h1>Apigee LLM + Agent</h1>
+      </div>
+
+      <nav class="tabs" id="tabs">
+        <button type="button" class="tab active" data-view="direct">Direct model</button>
+        <button type="button" class="tab" data-view="agent">Agent</button>
+        <!-- revealed only when /api/me says is_admin (server-side enforced regardless) -->
+        <button type="button" class="tab" data-view="admin" id="admin-tab" hidden>Admin</button>
+        <button type="button" class="tab" data-view="sessions" id="sessions-tab" hidden>Sessions</button>
+        <button type="button" class="tab" data-view="trace" id="trace-tab" hidden>Trace</button>
+      </nav>
+
+      <div class="toolbar">
+        <!-- Direct-model controls -->
+        <label class="select-wrap direct-only" for="publisher">
+          <span>Publisher</span>
+          <select id="publisher" aria-label="Publisher"></select>
+        </label>
+        <label class="select-wrap direct-only" for="complexity">
+          <span>Complexity</span>
+          <select id="complexity" aria-label="Complexity"></select>
+        </label>
+        <!-- Personal LLM API key (app-per-user at the gateway; bound to the
+             IAP email, metered by per-key llmQuota). Stored in localStorage. -->
+        <label class="select-wrap direct-only" for="llm-key">
+          <span>API key</span>
+          <input type="password" id="llm-key" class="key-input" placeholder="your key"
+                 autocomplete="off" aria-label="Personal LLM API key" />
+        </label>
+        <label class="toggle direct-only" for="use-cache" title="Send invalidate-llm-cache header to bypass Apigee semantic cache">
+          <input type="checkbox" id="use-cache" checked />
+          <span>Cache</span>
+        </label>
+        <label class="toggle direct-only" id="stream-toggle-wrap" for="use-stream" title="Stream tokens via the streaming Apigee proxy (Gemini)" hidden>
+          <input type="checkbox" id="use-stream" checked />
+          <span>Stream</span>
+        </label>
+        <span class="resolved-model direct-only" id="resolved-model" title="Model that will be hit upstream"></span>
+        <!-- Agent: specialists the supervisor can hand off to -->
+        <div class="legend agent-only" id="legend" title="Specialists the supervisor can delegate to"></div>
+        <label class="toggle agent-only" for="use-token-stream" title="Experimental: ask Agent Engine to stream token-level partial events (RunConfig SSE)">
+          <input type="checkbox" id="use-token-stream" />
+          <span>Tokens</span>
+        </label>
+        <label class="toggle" for="use-debug" title="Capture the raw per-event data for each streamed response">
+          <input type="checkbox" id="use-debug" />
+          <span>Debug</span>
+        </label>
+        <button id="reset" class="direct-only" type="button" title="Clear conversation">Clear</button>
+      </div>
+    </header>
+
+    <div class="workspace">
+      <!-- Session history (agent view only) -->
+      <aside class="sidebar agent-only" id="sidebar" aria-label="Sessions">
+        <div class="sidebar-head">
+          <span class="sidebar-title">Sessions</span>
+          <button type="button" id="new-chat" title="Start a new session">＋ New</button>
+        </div>
+        <span class="session-chip" id="session-chip" title="Active Agent Engine session">no session</span>
+        <ul class="session-list" id="session-list"></ul>
+      </aside>
+
+      <!-- Admin view: manage the ACL (Firestore) the supervisor enforces.
+           `hidden` is the stale-CSS safety net; body.view-admin CSS overrides it. -->
+      <section class="admin" id="admin" aria-label="ACL administration" hidden>
+        <div class="admin-alert" id="admin-alert" hidden></div>
+        <div class="admin-grid">
+          <section class="admin-card">
+            <div class="admin-card-head">
+              <h2>Roles</h2>
+              <span class="admin-hint">which agents each role may use · <code>*</code> = all · admin unlocks this view</span>
+            </div>
+            <div class="admin-list" id="admin-roles"></div>
+            <form class="admin-add" id="role-add">
+              <input id="role-name" placeholder="new-role-name" pattern="[a-z0-9][a-z0-9_-]*"
+                     title="lowercase slug: a-z 0-9 _ -" required />
+              <button type="submit">Add role</button>
+            </form>
+          </section>
+          <section class="admin-card">
+            <div class="admin-card-head">
+              <h2>Users</h2>
+              <span class="admin-hint">IAP-verified emails → roles</span>
+            </div>
+            <div class="admin-list" id="admin-users"></div>
+            <form class="admin-add" id="user-add">
+              <input id="user-email" type="email" placeholder="person@example.com" required />
+              <button type="submit">Add user</button>
+            </form>
+          </section>
+        </div>
+      </section>
+
+      <!-- Sessions navigator (admin): a tree of user → session → trace →
+           specialist sub-sessions. Clicking a trace jumps to the Trace view. -->
+      <section class="sessions" id="sessions" aria-label="Session navigator" hidden>
+        <div class="trace-toolbar">
+          <label class="select-wrap">
+            <span>User</span>
+            <select id="sess-user"><option value="">all users</option></select>
+          </label>
+          <button type="button" id="sess-refresh" title="Reload the tree">↻ Refresh</button>
+          <span class="trace-count" id="sess-count"></span>
+        </div>
+        <div class="sess-summary" id="sess-summary"></div>
+        <div class="sess-tree" id="sess-tree" aria-label="Sessions tree"></div>
+      </section>
+
+      <!-- Trace Explorer (admin): reconstructs one end-to-end transaction from
+           the four ai-logs. `hidden` is the stale-CSS safety net; body.view-trace
+           CSS overrides it. -->
+      <section class="trace" id="trace" aria-label="Trace explorer" hidden>
+        <div class="trace-toolbar">
+          <label class="select-wrap">
+            <span>User</span>
+            <select id="trace-user"><option value="">all users</option></select>
+          </label>
+          <label class="select-wrap">
+            <span>View</span>
+            <select id="trace-view">
+              <option value="">all</option>
+              <option value="agent">agent</option>
+              <option value="direct">direct</option>
+            </select>
+          </label>
+          <button type="button" id="trace-refresh" title="Reload recent traces">↻ Refresh</button>
+          <span class="trace-count" id="trace-count"></span>
+        </div>
+        <div class="trace-body">
+          <aside class="trace-list" id="trace-list" aria-label="Recent traces"></aside>
+          <div class="trace-detail" id="trace-detail">
+            <div class="trace-empty" id="trace-empty">Select a transaction to replay its journey across every component.</div>
+            <div class="trace-view" id="trace-viewpane" hidden>
+              <div class="trace-summary" id="trace-summary"></div>
+              <div class="trace-controls" id="trace-controls">
+                <button type="button" id="trace-play" title="Play / pause the replay">▶ Play</button>
+                <button type="button" id="trace-replay" title="Restart">⟲</button>
+                <input type="range" id="trace-scrub" min="0" max="1000" value="0" step="1" aria-label="Scrub" />
+                <span class="trace-clock" id="trace-clock">0 ms</span>
+                <span class="trace-speed-group">
+                  <span class="trace-speed-label">Speed</span>
+                  <button type="button" class="trace-speed" data-speed="0.25">0.25×</button>
+                  <button type="button" class="trace-speed" data-speed="0.5">0.5×</button>
+                  <button type="button" class="trace-speed active" data-speed="1">1×</button>
+                  <button type="button" class="trace-speed" data-speed="2">2×</button>
+                  <button type="button" class="trace-speed" data-speed="4">4×</button>
+                </span>
+              </div>
+              <div class="trace-graph-wrap">
+                <svg class="trace-graph" id="trace-graph" xmlns="http://www.w3.org/2000/svg"></svg>
+              </div>
+              <div class="trace-panels">
+                <div class="trace-pie-wrap">
+                  <div class="trace-panel-title">Latency by layer <span class="trace-panel-hint">exclusive · sums to the turn</span></div>
+                  <div class="trace-pie">
+                    <svg class="trace-pie-svg" id="trace-pie-svg" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg"></svg>
+                    <div class="pie-legend" id="trace-pie-legend"></div>
+                  </div>
+                </div>
+                <div class="trace-waterfall-wrap">
+                  <div class="trace-panel-title">Latency waterfall</div>
+                  <div class="trace-waterfall" id="trace-waterfall"></div>
+                </div>
+              </div>
+              <div class="trace-records-wrap">
+                <div class="trace-panel-title">Log records <span class="trace-panel-hint">request order</span>
+                  <label class="native-toggle" title="Show the engines' native framework log lines">
+                    <input type="checkbox" id="trace-native" />
+                    <span class="native-slider"></span>
+                    <span class="native-label">native logs</span>
+                  </label>
+                </div>
+                <div class="trace-records" id="trace-records"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="conversation">
+        <section class="stats" id="stats">
+          <div class="stat"><span class="stat-label">Last latency</span><span class="stat-val" id="stat-latency">—</span></div>
+          <div class="stat"><span class="stat-label">Last tokens</span><span class="stat-val" id="stat-tokens">—</span></div>
+          <div class="stat"><span class="stat-label">Session tokens</span><span class="stat-val" id="stat-session">0</span></div>
+          <div class="stat"><span class="stat-label">Turns</span><span class="stat-val" id="stat-turns">0</span></div>
+        </section>
+
+        <main id="chat" aria-live="polite">
+          <div class="empty-state" id="empty"></div>
+        </main>
+
+        <form id="form">
+          <textarea
+            id="input"
+            rows="1"
+            placeholder="Ask something... (Enter to send, Shift+Enter for newline)"
+            autofocus
+            required
+          ></textarea>
+          <button id="send" type="submit">Send</button>
+        </form>
+      </section>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/marked@15.0.7/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@3.2.4/dist/purify.min.js"></script>
+    <script src="app.js?v=14"></script>
+  </body>
+</html>

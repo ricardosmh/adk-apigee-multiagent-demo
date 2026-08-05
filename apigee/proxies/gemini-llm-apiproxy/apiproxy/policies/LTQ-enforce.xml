@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<LLMTokenQuota name="LTQ-enforce" continueOnError="false" enabled="true">
+  <DisplayName>LTQ-enforce</DisplayName>
+  <!-- REQUEST-side check: rejects (429) BEFORE paying for the model call when
+       the caller's counter is already over. The allowance comes from the API
+       product's llmQuota fields (manifest-driven; defaults mirror the
+       manifest); the counter is PER KEY (Identifier=client_id) - per agent on
+       agents-models, per end user on the unified product. The response-side
+       LTQ-count increments the same counter via SharedName. -->
+  <SharedName>agent-output-tokens</SharedName>
+  <EnforceOnly>true</EnforceOnly>
+  <Identifier ref="verifyapikey.VA-VerifyAPIKey.client_id"/>
+  <Allow count="100000" countRef="verifyapikey.VA-VerifyAPIKey.apiproduct.developer.llmQuota.limit"/>
+  <Interval ref="verifyapikey.VA-VerifyAPIKey.apiproduct.developer.llmQuota.interval">1</Interval>
+  <TimeUnit ref="verifyapikey.VA-VerifyAPIKey.apiproduct.developer.llmQuota.timeunit">hour</TimeUnit>
+  <!-- REQUIRED: without it the policy defaults to jsonPath($.model) on the
+       REQUEST body (absent in Gemini/Anthropic shapes) and 500s. dynamic_model
+       is set before this policy runs (EV-ExtractRequest / AM-set-*-model). -->
+  <LLMModelSource>{dynamic_model}</LLMModelSource>
+  <Distributed>true</Distributed>
+  <Synchronous>true</Synchronous>
+</LLMTokenQuota>

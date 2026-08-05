@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<ExtractVariables continueOnError="false" enabled="true" name="EV-extract-agent-id-operation">
+  <DisplayName>EV-extract-agent-id-operation</DisplayName>
+  <Source>request</Source>
+  <URIPath>
+    <Pattern ignoreCase="false">/agents/{agentId}/{operation}</Pattern>
+  </URIPath>
+  <VariablePrefix>ev</VariablePrefix>
+</ExtractVariables>

@@ -1,0 +1,253 @@
+[
+  {
+    "name": "ai_tokens_total",
+    "config": {
+      "description": "LLM total tokens per model/app (apigee-ai-logs gateway records). Distribution \u2014 a value extractor requires DISTRIBUTION; chart with ALIGN_SUM for total tokens.",
+      "filter": "logName=~\"/logs/apigee-ai-logs$\" AND jsonPayload.llm.totalTokens!=\"\"",
+      "metricDescriptor": {
+        "metricKind": "DELTA",
+        "valueType": "DISTRIBUTION",
+        "unit": "1",
+        "labels": [
+          {
+            "key": "model",
+            "valueType": "STRING"
+          },
+          {
+            "key": "app",
+            "valueType": "STRING"
+          }
+        ]
+      },
+      "valueExtractor": "EXTRACT(jsonPayload.llm.totalTokens)",
+      "labelExtractors": {
+        "model": "EXTRACT(jsonPayload.llm.model)",
+        "app": "EXTRACT(jsonPayload.app)"
+      },
+      "bucketOptions": {
+        "exponentialBuckets": {
+          "numFiniteBuckets": 24,
+          "growthFactor": 2,
+          "scale": 1
+        }
+      }
+    }
+  },
+  {
+    "name": "ai_llm_calls",
+    "config": {
+      "description": "Count of LLM gateway calls per model/app (apigee-ai-logs with a model). Pure counter \u2014 no value extraction, so it always captures; the reliable throughput + scorecard source.",
+      "filter": "logName=~\"/logs/apigee-ai-logs$\" AND jsonPayload.llm.model!=\"\"",
+      "metricDescriptor": {
+        "metricKind": "DELTA",
+        "valueType": "INT64",
+        "unit": "1",
+        "labels": [
+          {
+            "key": "model",
+            "valueType": "STRING"
+          },
+          {
+            "key": "app",
+            "valueType": "STRING"
+          }
+        ]
+      },
+      "labelExtractors": {
+        "model": "EXTRACT(jsonPayload.llm.model)",
+        "app": "EXTRACT(jsonPayload.app)"
+      }
+    }
+  },
+  {
+    "name": "ai_quota_used",
+    "config": {
+      "description": "Per-app LLM token quota used at the moment of each call (apigee-ai-logs). Distribution \u2014 chart the max as the current pressure.",
+      "filter": "logName=~\"/logs/apigee-ai-logs$\" AND jsonPayload.quota.used!=\"\"",
+      "metricDescriptor": {
+        "metricKind": "DELTA",
+        "valueType": "DISTRIBUTION",
+        "unit": "1",
+        "labels": [
+          {
+            "key": "app",
+            "valueType": "STRING"
+          }
+        ]
+      },
+      "valueExtractor": "EXTRACT(jsonPayload.quota.used)",
+      "labelExtractors": {
+        "app": "EXTRACT(jsonPayload.app)"
+      },
+      "bucketOptions": {
+        "exponentialBuckets": {
+          "numFiniteBuckets": 20,
+          "growthFactor": 2,
+          "scale": 1
+        }
+      }
+    }
+  },
+  {
+    "name": "ai_latency_ms",
+    "config": {
+      "description": "Per-EVENT measured latency (ms) from latency_metrics.latencyMs. Labelled by event (model_call/tool_call/a2a_call/service_request/turn/agent_turn) AND component. NOTE: these are measured operation durations, not exclusive/self latency \u2014 turn is end-to-end, a2a_call/tool_call include downstream work. Exclusive per-component latency = the Trace Explorer.",
+      "filter": "logName=~\"-ai-logs$\" AND jsonPayload.latency_metrics.latencyMs>0",
+      "metricDescriptor": {
+        "metricKind": "DELTA",
+        "valueType": "DISTRIBUTION",
+        "unit": "ms",
+        "labels": [
+          {
+            "key": "component",
+            "valueType": "STRING"
+          },
+          {
+            "key": "event",
+            "valueType": "STRING"
+          }
+        ]
+      },
+      "valueExtractor": "EXTRACT(jsonPayload.latency_metrics.latencyMs)",
+      "labelExtractors": {
+        "component": "EXTRACT(jsonPayload.component)",
+        "event": "EXTRACT(jsonPayload.event)"
+      },
+      "bucketOptions": {
+        "exponentialBuckets": {
+          "numFiniteBuckets": 24,
+          "growthFactor": 2,
+          "scale": 1
+        }
+      }
+    }
+  },
+  {
+    "name": "ai_gateway_faults",
+    "config": {
+      "description": "Gateway fault count (apigee-ai-logs where fault is set) \u2014 quota trips, auth failures, upstream errors.",
+      "filter": "logName=~\"/logs/apigee-ai-logs$\" AND jsonPayload.fault!=\"\"",
+      "metricDescriptor": {
+        "metricKind": "DELTA",
+        "valueType": "INT64",
+        "unit": "1",
+        "labels": [
+          {
+            "key": "app",
+            "valueType": "STRING"
+          },
+          {
+            "key": "proxy",
+            "valueType": "STRING"
+          }
+        ]
+      },
+      "labelExtractors": {
+        "app": "EXTRACT(jsonPayload.app)",
+        "proxy": "EXTRACT(jsonPayload.proxy)"
+      }
+    }
+  },
+  {
+    "name": "ai_input_tokens",
+    "config": {
+      "description": "LLM input/prompt tokens per model/app (apigee-ai-logs). Distribution.",
+      "filter": "logName=~\"/logs/apigee-ai-logs$\" AND jsonPayload.llm.inputTokens!=\"\"",
+      "metricDescriptor": {
+        "metricKind": "DELTA",
+        "valueType": "DISTRIBUTION",
+        "unit": "1",
+        "labels": [
+          {
+            "key": "model",
+            "valueType": "STRING"
+          },
+          {
+            "key": "app",
+            "valueType": "STRING"
+          }
+        ]
+      },
+      "valueExtractor": "EXTRACT(jsonPayload.llm.inputTokens)",
+      "labelExtractors": {
+        "model": "EXTRACT(jsonPayload.llm.model)",
+        "app": "EXTRACT(jsonPayload.app)"
+      },
+      "bucketOptions": {
+        "exponentialBuckets": {
+          "numFiniteBuckets": 24,
+          "growthFactor": 2,
+          "scale": 1
+        }
+      }
+    }
+  },
+  {
+    "name": "ai_output_tokens",
+    "config": {
+      "description": "LLM output/completion tokens per model/app. Distribution.",
+      "filter": "logName=~\"/logs/apigee-ai-logs$\" AND jsonPayload.llm.outputTokens!=\"\"",
+      "metricDescriptor": {
+        "metricKind": "DELTA",
+        "valueType": "DISTRIBUTION",
+        "unit": "1",
+        "labels": [
+          {
+            "key": "model",
+            "valueType": "STRING"
+          },
+          {
+            "key": "app",
+            "valueType": "STRING"
+          }
+        ]
+      },
+      "valueExtractor": "EXTRACT(jsonPayload.llm.outputTokens)",
+      "labelExtractors": {
+        "model": "EXTRACT(jsonPayload.llm.model)",
+        "app": "EXTRACT(jsonPayload.app)"
+      },
+      "bucketOptions": {
+        "exponentialBuckets": {
+          "numFiniteBuckets": 24,
+          "growthFactor": 2,
+          "scale": 1
+        }
+      }
+    }
+  },
+  {
+    "name": "ai_thinking_tokens",
+    "config": {
+      "description": "LLM reasoning/thinking tokens per model/app (0 for non-thinking models). Distribution.",
+      "filter": "logName=~\"/logs/apigee-ai-logs$\" AND jsonPayload.llm.thinkingTokens!=\"\"",
+      "metricDescriptor": {
+        "metricKind": "DELTA",
+        "valueType": "DISTRIBUTION",
+        "unit": "1",
+        "labels": [
+          {
+            "key": "model",
+            "valueType": "STRING"
+          },
+          {
+            "key": "app",
+            "valueType": "STRING"
+          }
+        ]
+      },
+      "valueExtractor": "EXTRACT(jsonPayload.llm.thinkingTokens)",
+      "labelExtractors": {
+        "model": "EXTRACT(jsonPayload.llm.model)",
+        "app": "EXTRACT(jsonPayload.app)"
+      },
+      "bucketOptions": {
+        "exponentialBuckets": {
+          "numFiniteBuckets": 24,
+          "growthFactor": 2,
+          "scale": 1
+        }
+      }
+    }
+  }
+]

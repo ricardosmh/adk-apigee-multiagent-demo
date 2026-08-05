@@ -1,0 +1,317 @@
+openapi: 3.0.3
+info:
+  title: Orders Service
+  description: Microservice for managing e-commerce customer orders and line items.
+  version: 1.0.0
+servers:
+- url: https://internal.apigee.com
+  description: Gateway base URL
+paths:
+  /order-management/health:
+    get:
+      tags:
+      - Health
+      summary: Health Check
+      operationId: checkOrderHealth
+      description: Endpoint to verify the health and operational readiness of the orders microservice.
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+  /order-management/orders:
+    post:
+      tags:
+      - Orders
+      summary: Create Order
+      operationId: createOrder
+      description: Place a new customer order with associated line items.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrderCreate'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    get:
+      tags:
+      - Orders
+      summary: Get Orders
+      operationId: listOrders
+      description: Retrieve a paginated list of customer orders across the e-commerce platform.
+      parameters:
+      - name: skip
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 0
+          title: Skip
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 100
+          title: Limit
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/OrderResponse'
+                title: Response Get Orders Orders Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /order-management/orders/{order_id}:
+    get:
+      tags:
+      - Orders
+      summary: Get Order
+      operationId: getOrderById
+      description: Retrieve complete details, line items, and fulfillment status for a specific order by ID.
+      parameters:
+      - name: order_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Order Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /order-management/customers/{customer_id}/orders:
+    get:
+      tags:
+      - Orders
+      summary: Get Customer Orders
+      operationId: listOrdersByCustomerId
+      description: Retrieve all orders placed by a specific customer identified by customer ID.
+      parameters:
+      - name: customer_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Customer Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/OrderResponse'
+                title: Response Get Customer Orders Customers  Customer Id  Orders
+                  Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /order-management/orders/{order_id}/status:
+    put:
+      tags:
+      - Orders
+      summary: Update Order Status
+      operationId: updateOrderStatus
+      description: Update the fulfillment status and optional tracking number for a specific order by ID.
+      parameters:
+      - name: order_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Order Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrderStatusUpdate'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+components:
+  schemas:
+    HTTPValidationError:
+      properties:
+        detail:
+          items:
+            $ref: '#/components/schemas/ValidationError'
+          type: array
+          title: Detail
+      type: object
+      title: HTTPValidationError
+    OrderCreate:
+      properties:
+        customerId:
+          type: integer
+          title: Customerid
+        items:
+          items:
+            $ref: '#/components/schemas/OrderItemCreate'
+          type: array
+          title: Items
+      type: object
+      required:
+      - customerId
+      - items
+      title: OrderCreate
+    OrderItemCreate:
+      properties:
+        productId:
+          type: integer
+          title: Productid
+        quantity:
+          type: integer
+          title: Quantity
+      type: object
+      required:
+      - productId
+      - quantity
+      title: OrderItemCreate
+    OrderItemResponse:
+      properties:
+        id:
+          type: integer
+          title: Id
+        orderId:
+          type: integer
+          nullable: true
+          title: Orderid
+        productId:
+          type: integer
+          nullable: true
+          title: Productid
+        quantity:
+          type: integer
+          nullable: true
+          title: Quantity
+        price:
+          type: string
+          pattern: ^[+-]?\d+(\.\d+)?$
+          nullable: true
+          title: Price
+      type: object
+      required:
+      - id
+      title: OrderItemResponse
+    OrderResponse:
+      properties:
+        orderId:
+          type: integer
+          title: Orderid
+        orderDate:
+          type: string
+          format: date
+          nullable: true
+          title: Orderdate
+        totalAmount:
+          type: string
+          pattern: ^[+-]?\d+(\.\d+)?$
+          nullable: true
+          title: Totalamount
+        customerId:
+          type: integer
+          nullable: true
+          title: Customerid
+        orderStatus:
+          type: string
+          nullable: true
+          title: Orderstatus
+        trackingNumber:
+          type: string
+          nullable: true
+          title: Trackingnumber
+        items:
+          items:
+            $ref: '#/components/schemas/OrderItemResponse'
+          type: array
+          title: Items
+          default: []
+      type: object
+      required:
+      - orderId
+      title: OrderResponse
+    OrderStatusUpdate:
+      properties:
+        orderStatus:
+          type: string
+          title: Orderstatus
+        trackingNumber:
+          type: string
+          nullable: true
+          title: Trackingnumber
+      type: object
+      required:
+      - orderStatus
+      title: OrderStatusUpdate
+    ValidationError:
+      properties:
+        loc:
+          items:
+            anyOf:
+            - type: string
+            - type: integer
+          type: array
+          title: Location
+        msg:
+          type: string
+          title: Message
+        type:
+          type: string
+          title: Error Type
+        input:
+          title: Input
+        ctx:
+          type: object
+          title: Context
+      type: object
+      required:
+      - loc
+      - msg
+      - type
+      title: ValidationError

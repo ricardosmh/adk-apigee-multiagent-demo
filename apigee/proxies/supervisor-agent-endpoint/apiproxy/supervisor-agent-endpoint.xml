@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<APIProxy revision="9" name="supervisor-agent-endpoint">
+  <DisplayName/>
+  <Description/>
+  <CreatedAt>1780532901073</CreatedAt>
+  <LastModifiedAt>1780532901073</LastModifiedAt>
+  <BasePaths>/ai-agents</BasePaths>
+  <Policies>
+    <Policy>EV-extract-session</Policy>
+    <Policy>AM-set-user-var</Policy>
+    <Policy>ML-interaction</Policy>
+    <Policy>DC-capture-user</Policy>
+    <Policy>VA-VerifyAPIKey</Policy>
+    <Policy>am-clean-headers</Policy>
+    <Policy>AM-Target-Stream</Policy>
+    <Policy>EV-extract-agent-id-operation</Policy>
+    <Policy>RF-invalidMethod</Policy>
+  </Policies>
+  <ProxyEndpoints>
+    <ProxyEndpoint>default</ProxyEndpoint>
+  </ProxyEndpoints>
+  <TargetEndpoints>
+    <TargetEndpoint>default</TargetEndpoint>
+  </TargetEndpoints>
+</APIProxy>

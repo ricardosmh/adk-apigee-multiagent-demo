@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<DataCapture name="DC-capture-user" continueOnError="true" enabled="true">
+  <DisplayName>DC-capture-user</DisplayName>
+  <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+  <!-- x-user-email: the IAP-VERIFIED email the BFF forwards (never client
+       supplied - the BFF sets it from the signed IAP assertion). Captured
+       into dc_user_id for per-user analytics; am-clean-headers then strips
+       it so it never reaches the upstream provider. -->
+  <Capture>
+    <Collect ref="request.header.x-user-email" default="anonymous"/>
+    <DataCollector>dc_user_id</DataCollector>
+  </Capture>
+</DataCapture>

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<ExtractVariables continueOnError="true" enabled="true" name="EV-extract-session">
+  <DisplayName>EV-extract-session</DisplayName>
+  <!-- session_id from the streamQuery body for the interaction log (ML). -->
+  <Source>request</Source>
+  <JSONPayload>
+    <Variable name="session_id_var">
+      <JSONPath>$.input.session_id</JSONPath>
+    </Variable>
+  </JSONPayload>
+  <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+</ExtractVariables>

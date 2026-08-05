@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<RaiseFault name="RF-key-owner-mismatch" continueOnError="false" enabled="true">
+  <DisplayName>RF-key-owner-mismatch</DisplayName>
+  <!-- Key <-> identity binding: the app's owner_email attribute (stamped by
+       provision.py users at app creation) must equal the IAP-verified email
+       the BFF injects as x-user-email. A key with NO owner_email is also
+       rejected - every app on this product must be a personal end-user app
+       (the shared BFF key is retired). -->
+  <FaultResponse>
+    <Set>
+      <StatusCode>403</StatusCode>
+      <Payload contentType="application/json">{"error": "key_owner_mismatch", "detail": "This API key belongs to a different user. Use the key issued for your account."}</Payload>
+    </Set>
+  </FaultResponse>
+  <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+</RaiseFault>

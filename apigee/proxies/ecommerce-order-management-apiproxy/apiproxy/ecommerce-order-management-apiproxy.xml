@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<APIProxy revision="2" name="ecommerce-order-management-apiproxy">
+  <DisplayName/>
+  <Description>Microservice for managing e-commerce customer orders and line items.</Description>
+  <CreatedAt>1780588240118</CreatedAt>
+  <LastModifiedAt>1780588270483</LastModifiedAt>
+  <BasePaths>/order-management</BasePaths>
+  <Policies>
+    <Policy>ML-interaction</Policy>
+  </Policies>
+  <ProxyEndpoints>
+    <ProxyEndpoint>default</ProxyEndpoint>
+  </ProxyEndpoints>
+  <TargetEndpoints>
+    <TargetEndpoint>default</TargetEndpoint>
+  </TargetEndpoints>
+</APIProxy>

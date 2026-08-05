@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<APIProxy revision="1" name="ecommerce-product-management-apiproxy">
+  <DisplayName/>
+  <Description>Microservice for managing e-commerce product catalog and inventory.</Description>
+  <CreatedAt>1779728665670</CreatedAt>
+  <LastModifiedAt>1779728705779</LastModifiedAt>
+  <BasePaths>/product-management</BasePaths>
+  <ProxyEndpoints>
+    <ProxyEndpoint>default</ProxyEndpoint>
+  </ProxyEndpoints>
+  <TargetEndpoints>
+    <TargetEndpoint>default</TargetEndpoint>
+  </TargetEndpoints>
+</APIProxy>

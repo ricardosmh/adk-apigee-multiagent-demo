@@ -1,0 +1,97 @@
+# Declarative Cloud Run service — the SINGLE SOURCE OF TRUTH for the BFF deploy.
+# Unlike `env.yaml` (literals only, for --env-vars-file), this file can declare
+# Secret Manager references (secretKeyRef), ingress, Direct VPC egress, the runtime
+# SA and probes — so one command applies the whole post-3b posture and the secret
+# wiring is baked in (no --set-secrets to retype).
+#
+# __TOKENS__ (project/region/number) are rendered by the tool from
+# demo-environment.yaml — project ids never live in this file.
+# Deploy with the tool: `python frontend/deploy_frontend.py` (config-only apply,
+# reuses the live image tag) or `--build` (new image + apply); `--check` diffs
+# the live service against this file. NEVER `gcloud run services replace` this
+# file directly — the image tag is the __TAG__ template the tool substitutes.
+#
+# It holds only secret *references*, never values, so it's safe to keep in git.
+# (Cloud Run + Artifact Registry + the bff-egress subnet are in southamerica-west1,
+#  co-located with the Apigee runtime; Firestore stays in us-central1.)
+# IAP (3c) is declared here (iap-enabled annotation + IAP_AUDIENCE) so a `replace`
+# never silently disables it. The OAuth brand + IAM grants persist out-of-band.
+#
+# `gcloud run services replace` is AUTHORITATIVE — it replaces the whole service
+# config, so keep this file complete and current.
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: agent-bff
+  annotations:
+    # ingress=all for the IAP-for-Cloud-Run-DIRECT path (no external LB). This is
+    # NOT public: anonymous requests are rejected by IAM (--no-allow-unauthenticated,
+    # an IAM binding `replace` does not touch, so it persists) and by IAP once 3c
+    # is on. `replace` keeps the auth-required posture; the tunnel keeps working.
+    # (Use internal-and-cloud-load-balancing ONLY if you front it with a LB —
+    #  which the IAP-direct decision avoids — and then test via the LB only.)
+    run.googleapis.com/ingress: all
+    # IAP-for-Cloud-Run-DIRECT enforcement toggle — a SERVICE-level annotation
+    # (the platform rejects it on the revision template: "Supported kinds are:
+    # Service, Instance"; it was revision-level while the feature was beta).
+    # `replace` strips anything not in this file, so declaring it here keeps IAP
+    # on every deploy. OAuth brand + IAP IAM grants are separate and persist.
+    run.googleapis.com/iap-enabled: "true"
+spec:
+  template:
+    metadata:
+      annotations:
+        # Direct VPC egress into ai-vpc so the BFF resolves internal.apigee.com
+        # over the same PSC/DNS path as the agents (3b).
+        run.googleapis.com/network-interfaces: '[{"network":"ai-vpc","subnetwork":"bff-egress"}]'
+        # private-ranges-only (NOT all-traffic): only RFC1918 traffic (the private
+        # Apigee host) goes through the VPC; public egress (e.g. www.gstatic.com for
+        # IAP signing keys) uses Cloud Run's normal path. all-traffic black-holed
+        # gstatic (no Cloud NAT on this VPC), so IAP cert fetch timed out -> 401.
+        run.googleapis.com/vpc-access-egress: private-ranges-only
+    spec:
+      serviceAccountName: bff-runner@__AI_PROJECT__.iam.gserviceaccount.com
+      containers:
+        - image: __GATEWAY_REGION__-docker.pkg.dev/__AI_PROJECT__/bff/agent-bff:__TAG__
+          ports:
+            - containerPort: 8080
+          env:
+            # ── Non-secret config (literals) ──
+            - name: AGENT_BASE_URL
+              value: https://internal.apigee.com/ai-agents
+            # Resolved at render time: the NEWEST live engine named
+            # a2a-supervisor-agent (no hand-copied deployment state).
+            - name: AGENT_ENGINE_ID
+              value: "__SUPERVISOR_ENGINE_ID__"
+            - name: APIGEE_STREAM_URL
+              value: https://internal.apigee.com/llm-stream/prompt
+            - name: AGENT_INSECURE_TLS
+              value: "true"
+            # Admin API: Firestore ACL docs + Agent Registry listing (regional).
+            - name: GOOGLE_CLOUD_PROJECT
+              value: __AI_PROJECT__
+            - name: AGENT_REGISTRY_LOCATION
+              value: __AI_REGION__
+            - name: APIGEE_INSECURE_TLS
+              value: "true"
+            # 3a/3b only; ignored now IAP sets a real user_id (IAP_AUDIENCE below
+            # is non-empty). Safe to delete; kept as the off-switch fallback.
+            - name: IAP_AUDIENCE
+              value: /projects/__AI_PROJECT_NUMBER__/locations/__GATEWAY_REGION__/services/agent-bff
+            # ── Secrets (references only — values live in Secret Manager) ──
+            - name: APIGEE_AGENT_API_KEY        # /ai-agents key
+              valueFrom:
+                secretKeyRef:
+                  name: apigee-agent-key
+                  key: latest
+            # NO LLM key here anymore: Direct-view users bring their OWN key
+            # (app-per-user; key<->IAP-email binding + per-key llmQuota at the
+            # gateway). The shared unified-llm-enpdoint-apps app is retired.
+          startupProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080

@@ -1,0 +1,6 @@
+# Deps for the provisioning engine (provision.py). HTTP is stdlib urllib;
+# only the YAML manifest parser is external.
+PyYAML>=6,<7
+# certifi gives a portable CA bundle so TLS verification works on macOS
+# python.org builds (whose stdlib ssl ships no local roots).
+certifi

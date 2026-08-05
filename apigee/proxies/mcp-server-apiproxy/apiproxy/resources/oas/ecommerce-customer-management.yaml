@@ -1,0 +1,459 @@
+openapi: 3.0.3
+info:
+  title: Customers Service
+  description: Microservice for managing e-commerce customers.
+  version: 1.0.0
+servers:
+- url: https://internal.apigee.com
+  description: Gateway base URL
+paths:
+  /customer-management/health:
+    get:
+      tags:
+      - Health
+      summary: Health Check
+      operationId: checkCustomerHealth
+      description: Endpoint to verify the health and operational readiness of the customers microservice.
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+  /customer-management/customers:
+    post:
+      tags:
+      - Customers
+      summary: Create Customer
+      operationId: createCustomer
+      description: Create a new customer record in the e-commerce system.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomerCreate'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    get:
+      tags:
+      - Customers
+      summary: Get Customers
+      operationId: listCustomers
+      description: Retrieve a paginated list of registered customers.
+      parameters:
+      - name: skip
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 0
+          title: Skip
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 100
+          title: Limit
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CustomerResponse'
+                title: Response Get Customers Customers Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /customer-management/customers/{customer_id}:
+    get:
+      tags:
+      - Customers
+      summary: Get Customer
+      operationId: getCustomerById
+      description: Retrieve detailed profile information for a specific customer by ID.
+      parameters:
+      - name: customer_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Customer Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    put:
+      tags:
+      - Customers
+      summary: Update Customer
+      operationId: updateCustomerById
+      description: Update existing profile details for a specific customer by ID.
+      parameters:
+      - name: customer_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Customer Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomerUpdate'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    delete:
+      tags:
+      - Customers
+      summary: Delete Customer
+      operationId: deleteCustomerById
+      description: Delete a customer profile and account record by ID.
+      parameters:
+      - name: customer_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Customer Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+components:
+  schemas:
+    CustomerCreate:
+      properties:
+        firstName:
+          type: string
+          nullable: true
+          title: Firstname
+        lastName:
+          type: string
+          nullable: true
+          title: Lastname
+        dateOfBirth:
+          type: string
+          format: date
+          nullable: true
+          title: Dateofbirth
+        gender:
+          type: string
+          nullable: true
+          title: Gender
+        email:
+          type: string
+          format: email
+          title: Email
+        phone:
+          type: string
+          nullable: true
+          title: Phone
+        shipping_street:
+          type: string
+          nullable: true
+          title: Shipping Street
+        shipping_city:
+          type: string
+          nullable: true
+          title: Shipping City
+        shipping_state:
+          type: string
+          nullable: true
+          title: Shipping State
+        shipping_postalCode:
+          type: string
+          nullable: true
+          title: Shipping Postalcode
+        shipping_country:
+          type: string
+          nullable: true
+          title: Shipping Country
+        billing_street:
+          type: string
+          nullable: true
+          title: Billing Street
+        billing_city:
+          type: string
+          nullable: true
+          title: Billing City
+        billing_state:
+          type: string
+          nullable: true
+          title: Billing State
+        billing_postalCode:
+          type: string
+          nullable: true
+          title: Billing Postalcode
+        billing_country:
+          type: string
+          nullable: true
+          title: Billing Country
+        username:
+          type: string
+          title: Username
+        accountStatus:
+          type: string
+          nullable: true
+          title: Accountstatus
+          default: active
+      type: object
+      required:
+      - email
+      - username
+      title: CustomerCreate
+    CustomerResponse:
+      properties:
+        firstName:
+          type: string
+          nullable: true
+          title: Firstname
+        lastName:
+          type: string
+          nullable: true
+          title: Lastname
+        dateOfBirth:
+          type: string
+          format: date
+          nullable: true
+          title: Dateofbirth
+        gender:
+          type: string
+          nullable: true
+          title: Gender
+        email:
+          type: string
+          format: email
+          nullable: true
+          title: Email
+        phone:
+          type: string
+          nullable: true
+          title: Phone
+        shipping_street:
+          type: string
+          nullable: true
+          title: Shipping Street
+        shipping_city:
+          type: string
+          nullable: true
+          title: Shipping City
+        shipping_state:
+          type: string
+          nullable: true
+          title: Shipping State
+        shipping_postalCode:
+          type: string
+          nullable: true
+          title: Shipping Postalcode
+        shipping_country:
+          type: string
+          nullable: true
+          title: Shipping Country
+        billing_street:
+          type: string
+          nullable: true
+          title: Billing Street
+        billing_city:
+          type: string
+          nullable: true
+          title: Billing City
+        billing_state:
+          type: string
+          nullable: true
+          title: Billing State
+        billing_postalCode:
+          type: string
+          nullable: true
+          title: Billing Postalcode
+        billing_country:
+          type: string
+          nullable: true
+          title: Billing Country
+        username:
+          type: string
+          nullable: true
+          title: Username
+        accountStatus:
+          type: string
+          nullable: true
+          title: Accountstatus
+          default: active
+        customerId:
+          type: integer
+          title: Customerid
+        creationDate:
+          type: string
+          format: date
+          nullable: true
+          title: Creationdate
+        lastLogin:
+          type: string
+          format: date-time
+          nullable: true
+          title: Lastlogin
+      type: object
+      required:
+      - customerId
+      title: CustomerResponse
+    CustomerUpdate:
+      properties:
+        firstName:
+          type: string
+          nullable: true
+          title: Firstname
+        lastName:
+          type: string
+          nullable: true
+          title: Lastname
+        dateOfBirth:
+          type: string
+          format: date
+          nullable: true
+          title: Dateofbirth
+        gender:
+          type: string
+          nullable: true
+          title: Gender
+        email:
+          type: string
+          format: email
+          nullable: true
+          title: Email
+        phone:
+          type: string
+          nullable: true
+          title: Phone
+        shipping_street:
+          type: string
+          nullable: true
+          title: Shipping Street
+        shipping_city:
+          type: string
+          nullable: true
+          title: Shipping City
+        shipping_state:
+          type: string
+          nullable: true
+          title: Shipping State
+        shipping_postalCode:
+          type: string
+          nullable: true
+          title: Shipping Postalcode
+        shipping_country:
+          type: string
+          nullable: true
+          title: Shipping Country
+        billing_street:
+          type: string
+          nullable: true
+          title: Billing Street
+        billing_city:
+          type: string
+          nullable: true
+          title: Billing City
+        billing_state:
+          type: string
+          nullable: true
+          title: Billing State
+        billing_postalCode:
+          type: string
+          nullable: true
+          title: Billing Postalcode
+        billing_country:
+          type: string
+          nullable: true
+          title: Billing Country
+        username:
+          type: string
+          nullable: true
+          title: Username
+        accountStatus:
+          type: string
+          nullable: true
+          title: Accountstatus
+          default: active
+      type: object
+      title: CustomerUpdate
+    HTTPValidationError:
+      properties:
+        detail:
+          items:
+            $ref: '#/components/schemas/ValidationError'
+          type: array
+          title: Detail
+      type: object
+      title: HTTPValidationError
+    ValidationError:
+      properties:
+        loc:
+          items:
+            anyOf:
+            - type: string
+            - type: integer
+          type: array
+          title: Location
+        msg:
+          type: string
+          title: Message
+        type:
+          type: string
+          title: Error Type
+        input:
+          title: Input
+        ctx:
+          type: object
+          title: Context
+      type: object
+      required:
+      - loc
+      - msg
+      - type
+      title: ValidationError

@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<ProxyEndpoint name="default">
+  <Description/>
+  <FaultRules/>
+  <PreFlow name="PreFlow">
+    <Request/>
+    <Response/>
+  </PreFlow>
+  <PostFlow name="PostFlow">
+    <Request/>
+    <Response/>
+  </PostFlow>
+  <Flows>
+    <Flow name="checkProductHealth">
+      <Description>Health Check</Description>
+      <Request/>
+      <Response/>
+      <Condition>(proxy.pathsuffix MatchesPath "/product-management/health") and (request.verb = "GET")</Condition>
+    </Flow>
+    <Flow name="listProducts">
+      <Description>Get Products</Description>
+      <Request/>
+      <Response/>
+      <Condition>(proxy.pathsuffix MatchesPath "/product-management/products") and (request.verb = "GET")</Condition>
+    </Flow>
+    <Flow name="createProduct">
+      <Description>Create Product</Description>
+      <Request/>
+      <Response/>
+      <Condition>(proxy.pathsuffix MatchesPath "/product-management/products") and (request.verb = "POST")</Condition>
+    </Flow>
+    <Flow name="getProductById">
+      <Description>Get Product</Description>
+      <Request/>
+      <Response/>
+      <Condition>(proxy.pathsuffix MatchesPath "/product-management/products/{product_id}") and (request.verb = "GET")</Condition>
+    </Flow>
+    <Flow name="updateProductById">
+      <Description>Update Product</Description>
+      <Request/>
+      <Response/>
+      <Condition>(proxy.pathsuffix MatchesPath "/product-management/products/{product_id}") and (request.verb = "PUT")</Condition>
+    </Flow>
+    <Flow name="deleteProductById">
+      <Description>Delete Product</Description>
+      <Request/>
+      <Response/>
+      <Condition>(proxy.pathsuffix MatchesPath "/product-management/products/{product_id}") and (request.verb = "DELETE")</Condition>
+    </Flow>
+    <Flow name="updateProductStock">
+      <Description>Update Product Stock</Description>
+      <Request/>
+      <Response/>
+      <Condition>(proxy.pathsuffix MatchesPath "/product-management/products/{product_id}/stock") and (request.verb = "PATCH")</Condition>
+    </Flow>
+  </Flows>
+  <PostClientFlow name="PostClientFlow">
+    <Request/>
+    <Response>
+      <Step>
+        <Name>ML-interaction</Name>
+      </Step>
+    </Response>
+  </PostClientFlow>
+  <HTTPProxyConnection>
+    <BasePath>/product-management</BasePath>
+    <Properties/>
+  </HTTPProxyConnection>
+  <RouteRule name="default">
+    <TargetEndpoint>default</TargetEndpoint>
+  </RouteRule>
+</ProxyEndpoint>

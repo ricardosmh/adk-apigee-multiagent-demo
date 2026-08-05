@@ -1,0 +1,47 @@
+[
+  {
+    "displayName": "AI - Tokens by model",
+    "chartType": "column",
+    "dimensions": ["dc_model"],
+    "metrics": [
+      {"name": "dc_tokenCount", "function": "sum"},
+      {"name": "dc_inputToken", "function": "sum"},
+      {"name": "dc_outputToken", "function": "sum"},
+      {"name": "dc_thoughtsTokenCount", "function": "sum"}
+    ]
+  },
+  {
+    "displayName": "AI - Tokens by user",
+    "chartType": "column",
+    "dimensions": ["dc_user_id"],
+    "metrics": [
+      {"name": "dc_tokenCount", "function": "sum"}
+    ]
+  },
+  {
+    "displayName": "AI - Tokens by app (agent vs direct)",
+    "chartType": "column",
+    "dimensions": ["developer_app"],
+    "metrics": [
+      {"name": "dc_tokenCount", "function": "sum"},
+      {"name": "message_count", "function": "sum"}
+    ]
+  },
+  {
+    "displayName": "AI - Model traffic over time",
+    "chartType": "line",
+    "dimensions": ["dc_model"],
+    "metrics": [
+      {"name": "message_count", "function": "sum"}
+    ]
+  },
+  {
+    "displayName": "AI - Latency and errors by proxy",
+    "chartType": "line",
+    "dimensions": ["apiproxy"],
+    "metrics": [
+      {"name": "total_response_time", "function": "avg"},
+      {"name": "is_error", "function": "sum"}
+    ]
+  }
+]

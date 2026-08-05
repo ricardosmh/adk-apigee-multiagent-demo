@@ -1,0 +1,20 @@
+# Deploy-HOST dependencies (one venv for all agents' deploy.py runs).
+#
+# deploy.py imports the agent app LOCALLY (to pickle it for Agent Engine), so
+# the host needs the same ADK the app is written against — google-adk is
+# PINNED and must match the range in each agents/*/pyproject.toml (the ENGINE
+# side; tests/test_dep_consistency.py guards those). An unpinned install can
+# resolve an older ADK (no google.adk.models.apigee_llm) and break deploys.
+# Union of the engine deps in agents/*/pyproject.toml that are needed at
+# IMPORT time (the app import pulls in ADK's A2A layer, MCP tooling, and the
+# supervisor's AgentRegistry): extras [a2a, agent-identity] cover all four
+# agents. Runtime-only deps (firestore, OTEL instrumentations) are excluded —
+# the engine installs those from its own pyproject.
+google-adk[a2a,agent-identity]==2.3.0
+a2a-sdk~=0.3.22
+mcp>=1.24,<2.0
+nest-asyncio>=1.6.0,<2.0.0
+google-cloud-aiplatform[agent-engines]>=1.130.0
+python-dotenv
+# provision_agents.py + the deploy preflight read runtime-manifest.yaml:
+PyYAML>=6,<7

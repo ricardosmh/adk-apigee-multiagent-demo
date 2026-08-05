@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<MessageLogging name="ML-interaction" continueOnError="true" enabled="true">
+  <DisplayName>ML-interaction</DisplayName>
+  <!-- One structured Cloud Logging entry PER INTERACTION, carrying the W3C
+       trace id (same trace as the BFF/engines/services -> one Logs Explorer
+       filter shows the whole turn). Attached in PostClientFlow: runs after
+       the response (incl. streamed) completes, never in the latency path.
+       The JSON is pretty-printed here for readable source; Cloud Logging
+       parses it into the same structured jsonPayload either way. Grouped
+       objects (llm/quota/timing) render as collapsible nodes in Logs
+       Explorer. Latency: subtract timing.* at query time (templates can't do
+       arithmetic). NO BODIES by design: streamed responses are never
+       buffered by the gateway, and request bodies carry the full prompt
+       history (bodies are logged, truncated, at the BFF only). -->
+  <CloudLogging>
+    <!-- Logged into the AI project (not the Apigee org project); written as
+         the proxy's deploy SA, which needs logging.logWriter there
+         (apigee manifest telemetryGrants). -->
+    <LogName>projects/__AI_PROJECT__/logs/apigee-ai-logs</LogName>
+    <Message contentType="application/json">{
+  "proxy": "unified-llm-endpoint-sse-apiproxy",
+  "revision": "{apiproxy.revision}",
+  "event": "gateway",
+  "component": "gateway",
+  "verb": "{request.verb}",
+  "path": "{escapeJSON(proxy.pathsuffix)}",
+  "status": "{message.status.code}",
+  "fault": "{fault.name}",
+  "error": "{escapeJSON(error.message)}",
+  "traceparent": "{request.header.traceparent}",
+  "apigeeMessageId": "{messageid}",
+  "user": "{user_email_var}",
+  "app": "{verifyapikey.VA-VerifyAPIKey.app.name}",
+  "product": "{verifyapikey.VA-VerifyAPIKey.apiproduct.name}",
+  "llm": {
+    "model": "{dynamic_model}",
+    "sessionId": "{session_id_var}",
+    "inputTokens": "{inputToken}",
+    "outputTokens": "{outputToken}",
+    "totalTokens": "{totalToken}",
+    "thinkingTokens": "{thoughtsToken}"
+  },
+  "quota": {
+    "allowed": "{ratelimit.LTQ-enforce.allowed.count}",
+    "used": "{ratelimit.LTQ-enforce.used.count}",
+    "available": "{ratelimit.LTQ-enforce.available.count}",
+    "exceeded": "{ratelimit.LTQ-enforce.exceed.count}"
+  },
+  "latency_metrics": {
+    "receivedAt": "{client.received.start.timestamp}",
+    "backendSentAt": "{target.sent.start.timestamp}",
+    "backendReceivedAt": "{target.received.end.timestamp}",
+    "respondedAt": "{system.timestamp}"
+  }
+}</Message>
+    <ResourceType>api</ResourceType>
+  </CloudLogging>
+</MessageLogging>
