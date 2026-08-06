@@ -10,6 +10,12 @@ dependencies = [
     # mcp_session_manager which imports `mcp` — but neither extra above pulls
     # it in, so declare it explicitly.
     "google-adk[a2a,agent-identity]>=2.3.0,<3.0.0",
+    # a2a_common imports a2a.types.TransportProtocol, which a2a-sdk 1.x
+    # removed. The specialists all carry this pin; without it here, ADK's
+    # [a2a] extra resolves a2a-sdk 1.x in the engine and the supervisor
+    # container crashes on import ("failed to start and cannot serve
+    # traffic"). Seen live 2026-08-06 (google-adk 2.6.2 -> a2a-sdk 1.1.2).
+    "a2a-sdk~=0.3.22",
     "mcp>=1.24,<2.0",
     "google-cloud-aiplatform[agent-engines]>=1.130.0",
     # Per-user ACL store (app/acl.py; lazy-imported, only when
