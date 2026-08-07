@@ -104,7 +104,7 @@ def preflight_identity(runner_sa: str | None, project: str, secret: str | None =
       agent at another agent's identity/key);
     - the SA holds the manifest-declared roles (falls back to aiplatform.user
       when the manifest is unavailable);
-    - runner SA + Vertex service agent hold secretAccessor on the secret.
+    - runner SA + GEAP service agent hold secretAccessor on the secret.
 
     Everything but the missing SA is a WARNING — never blocks a low-privilege
     deploy. Fixes are the provisioning tools, not ad-hoc grants:
@@ -153,9 +153,9 @@ def preflight_identity(runner_sa: str | None, project: str, secret: str | None =
             if runner_sa not in accessors:
                 warnings.append(f"{runner_sa} lacks secretAccessor on {secret} (runtime read will fail)")
             proj = _gcloud_json(["projects", "describe", project])
-            vertex_agent = f"service-{proj['projectNumber']}@gcp-sa-aiplatform.iam.gserviceaccount.com" if proj else None
-            if vertex_agent and vertex_agent not in accessors:
-                warnings.append(f"{vertex_agent} lacks secretAccessor on {secret} (SecretRef resolution at deploy will fail)")
+            geap_agent = f"service-{proj['projectNumber']}@gcp-sa-aiplatform.iam.gserviceaccount.com" if proj else None
+            if geap_agent and geap_agent not in accessors:
+                warnings.append(f"{geap_agent} lacks secretAccessor on {secret} (SecretRef resolution at deploy will fail)")
     for w in warnings:
         print(f"  ⚠ preflight: {w}")
     if warnings:
@@ -195,7 +195,7 @@ def psc_interface_config():
       PSC_NETWORK_ATTACHMENT  projects/<p>/regions/<region>/networkAttachments/<name>
                               (must be in the SAME region as this engine).
       PSC_DNS_DOMAIN          private DNS zone suffix, must end with '.'
-                              (enables a DNS peering zone in the Vertex tenant VPC).
+                              (enables a DNS peering zone in the GEAP tenant VPC).
       PSC_DNS_TARGET_PROJECT  project hosting that zone (default: PROJECT_ID).
       PSC_DNS_TARGET_NETWORK  VPC where the zone is visible (e.g. "ai-vpc").
     """
@@ -226,7 +226,7 @@ def psc_interface_config():
 
 
 def telemetry_env_vars(service_name: str) -> dict[str, str]:
-    """Defaults that turn on Vertex Agent Engine telemetry at deploy time.
+    """Defaults that turn on GEAP Agent Engine telemetry at deploy time.
 
     Without these, an engine ships with the per-engine console toggles OFF, so
     traces/logs/prompt-content don't populate until someone flips switches in

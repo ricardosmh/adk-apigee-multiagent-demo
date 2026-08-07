@@ -295,7 +295,7 @@ def user_attribution_model_callback(callback_context, llm_request):
 
 
 def configure_genai_env() -> None:
-    """Set the GenAI / Vertex env defaults every engine needs.
+    """Set the GenAI / GEAP env defaults every engine needs.
 
     Uses ``setdefault`` so an explicit deploy-time env var always wins.
 
@@ -305,7 +305,7 @@ def configure_genai_env() -> None:
         because ``apigee/gemini/`` forces Gemini-provider mode regardless.
       * GEMINI_API_KEY — dummy. Gemini-mode client requires *a* key but never
         uses it (Apigee owns upstream auth). MUST be GEMINI_API_KEY, not
-        GOOGLE_API_KEY: the latter is global and the Vertex session-service
+        GOOGLE_API_KEY: the latter is global and the GEAP session-service
         client would pick it up and 401.
     """
     _, project_id = google.auth.default()
@@ -322,7 +322,7 @@ def install_scoped_tls_skip() -> None:
     private hostname (no public CA). When ``APIGEE_LLM_INSECURE_TLS`` is truthy
     we skip verification — but only for the hosts derived from
     ``APIGEE_LLM_PROXY_URL`` / ``APIGEE_MCP_URL``, never process-wide. All other
-    egress (Vertex session service, A2A, Agent Registry) keeps full validation.
+    egress (GEAP session service, A2A, Agent Registry) keeps full validation.
     """
     if os.environ.get("APIGEE_LLM_INSECURE_TLS", "").lower() not in ("1", "true", "yes"):
         return
@@ -424,7 +424,7 @@ def build_apigee_model() -> EnvKeyApigeeLlm:
 
     Explicit ``apigee/gemini/`` forces Gemini-provider mode regardless of
     GOOGLE_GENAI_USE_VERTEXAI, so the client attaches no ADC/bearer — Apigee
-    owns upstream Vertex auth and the agent only presents its own x-api-key.
+    owns upstream GEAP auth and the agent only presents its own x-api-key.
     """
     configure_genai_env()
     install_scoped_tls_skip()

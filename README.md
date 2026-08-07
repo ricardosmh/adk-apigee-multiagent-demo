@@ -1,7 +1,7 @@
 # A2A Multi-Agent Demo — Agent Engine × Apigee × Cloud Run
 
 A complete, **replicable reference implementation of an enterprise-governed
-multi-agent AI system** on Google Cloud. A supervisor agent on **Vertex AI
+multi-agent AI system** on Google Cloud. A supervisor agent on **Gemini Enterprise Agent Platform (GEAP)
 Agent Engine** delegates to three domain specialists over the **A2A
 protocol**; **Apigee governs every data path** — model calls (Gemini *and*
 Claude), MCP tool calls, the agents themselves, and the e-commerce backend the
@@ -53,7 +53,7 @@ flowchart LR
     APIGEE ==> Sup[supervisor]
     Sup -->|A2A| Spec[order · product · customer]
     Spec ==>|models + tools| APIGEE
-    APIGEE ==> Gem[Vertex · Gemini + Claude]
+    APIGEE ==> Gem[GEAP · Gemini + Claude]
     APIGEE ==>|PSC| Svc["e-commerce services<br/>Cloud Run + Cloud SQL"]
 ```
 
@@ -69,7 +69,7 @@ including the Google-managed tenant projects most diagrams omit:
 
 ## The stack — what each component does and why it earns its place
 
-### Agents — Vertex AI Agent Engine ([agents/](agents/README.md))
+### Agents — GEAP Agent Engine ([agents/](agents/README.md))
 
 The AI plane: a **supervisor** plus three domain **specialists** (orders,
 products, customers), each its own Agent Engine deployment.

@@ -35,7 +35,7 @@ python smoketest.py --mode adk  # just the ApigeeLlm path
 - **RAW returns 404 / malformed-path** — the proxy's target path and the
   incoming `/{version}/models/...` suffix collide. Try
   `APIGEE_LLM_API_VERSION=` (empty) to see if the proxy expects no version
-  segment, or fix the proxy to rebuild the Vertex path.
+  segment, or fix the proxy to rebuild the GEAP path.
 - **RAW 200 but ADK fails on upstream auth** — the proxy is forwarding the
   SDK's `x-goog-api-key` upstream; strip it in the proxy (`am-clean-headers`).
 - **TLS errors** — keep `APIGEE_LLM_INSECURE_TLS=true` for the private gateway host.

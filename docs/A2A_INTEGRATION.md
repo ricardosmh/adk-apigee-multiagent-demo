@@ -1,7 +1,7 @@
 # Supervisor ↔ Sub-Agent Integration (A2A)
 
 How the supervisor orchestrator delegates to the three domain specialists over
-the **Agent-to-Agent (A2A)** protocol on Vertex AI Agent Engine — the exact
+the **Agent-to-Agent (A2A)** protocol on Gemini Enterprise Agent Platform (GEAP) Agent Engine — the exact
 classes, the auth, the discovery, and the per-turn call flow, with the code that
 makes each part work.
 
@@ -21,7 +21,7 @@ makes each part work.
 > (Apigee model + TLS skip), `specialist.py` (`build_specialist` +
 > `build_a2a_server_runtime`), `client.py` (streaming `RemoteA2aAgent` + A2A
 > auth + loop-binding). Specialists now **stream** their tokens over A2A
-> (AgentCard `streaming=True` + an SSE request-converter) — but Vertex Agent
+> (AgentCard `streaming=True` + an SSE request-converter) — but GEAP Agent
 > Engine coalesces the sub-agent stream, so delegated answers still arrive
 > message-granular. See [§9](#9-streaming-over-a2a-sub-agents-adk-23). The snippets
 > below stay as-is to explain the *mechanics*; for the current file layout see
@@ -263,7 +263,7 @@ matter of trimming that list — covered in §6.
 ### 3.3 Authenticating the A2A call (`app/a2a_auth.py`)
 
 A `RemoteA2aAgent` makes a real HTTP call to another reasoning engine, which is
-an IAM-protected Vertex endpoint. The call must carry a **Bearer token**. We
+an IAM-protected GEAP endpoint. The call must carry a **Bearer token**. We
 attach an `httpx.AsyncClient` whose auth refreshes ADC credentials per request:
 
 ```python

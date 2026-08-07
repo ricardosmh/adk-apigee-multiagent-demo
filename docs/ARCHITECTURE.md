@@ -1,7 +1,7 @@
 # Architecture
 
 A distributed multi-agent system spanning **three GCP projects**: a supervisor
-agent on **Vertex AI Agent Engine** coordinates three domain specialists over
+agent on **Gemini Enterprise Agent Platform (GEAP) Agent Engine** coordinates three domain specialists over
 the **A2A protocol**; **Apigee sits in every data path** (models, tools, the
 supervisor itself, and the e-commerce backend); and the business data lives in
 a separate services project behind an internal load balancer that only Apigee
@@ -37,7 +37,7 @@ flowchart TB
     subgraph AI["AI project"]
         IAP{{IAP}}
         BFF[BFF · Cloud Run<br/>never public]
-        subgraph Vertex["Vertex AI Agent Engine"]
+        subgraph GEAP["GEAP Agent Engine"]
             Sup[supervisor]
             Order[order_agent]
             Product[product_agent]
@@ -45,7 +45,7 @@ flowchart TB
         end
         FS[(Firestore ACL)]
         SM[(Secret Manager)]
-        Gem[Vertex AI models<br/>Gemini + Claude]
+        Gem[GEAP models<br/>Gemini + Claude]
     end
 
     subgraph APIGEE["Apigee project — one host, base paths"]
@@ -71,7 +71,7 @@ flowchart TB
     MCPP --> ECOM
     ECOM ==>|GoogleIDToken · PSC| ILB --> Svc --> SQL
     Sup -.-> FS
-    Vertex -.->|SecretRef keys| SM
+    GEAP -.->|SecretRef keys| SM
 
     classDef sup fill:#2563eb,stroke:#1e40af,color:#fff
     classDef edge fill:#f59e0b,stroke:#b45309,color:#000
@@ -100,7 +100,7 @@ sequenceDiagram
     participant B as Browser
     participant F as BFF (behind IAP)
     participant A as Apigee /llm-stream
-    participant V as Vertex models
+    participant V as GEAP models
     B->>F: prompt + the user's own API key (IAP authenticates)
     F->>F: verify IAP JWT signature → user email
     F->>A: POST /llm-stream/prompt (SSE) · x-api-key + user email
@@ -138,7 +138,7 @@ sequenceDiagram
 
 **Supervisor** (`agents/my_supervisor_agent`) — an ADK `Agent` in an `AdkApp`.
 Model calls go through `ApigeeLlm` (the `/aiplatform` gateway), never native
-Vertex. Sub-agents resolve in two layers: deploy-time warm start from Agent
+GEAP. Sub-agents resolve in two layers: deploy-time warm start from Agent
 Registry, plus a runtime step that re-points sub-agents at the newest registered
 engine **every turn** from a TTL-throttled cache — so a redeployed specialist is
 followed within ~60s with no supervisor redeploy. The per-user ACL filter
@@ -177,7 +177,7 @@ invoker SA, fronted by a path-routed regional internal ALB.
   the filter cannot be bypassed.
 - **Credential split by direction.** Consumers present `x-api-key`; Apigee
   mints upstream Google tokens as the *proxy's deploy SA* —
-  `GoogleAccessToken` toward Vertex, `GoogleIDToken` toward Cloud Run. The
+  `GoogleAccessToken` toward GEAP, `GoogleIDToken` toward Cloud Run. The
   ecommerce invoker SA's only power is `run.invoker` on the three services.
 - **Stable custom audiences** (`https://<svc>.ecommerce.internal`) keep proxy
   bundles project-independent.
@@ -231,10 +231,10 @@ trace-id filter shows a whole turn across all four logs. Full reference:
 | Agent Engine (managed) | vs self-hosted | No infra to run; built-in sessions, tracing, scaling |
 | A2A between agents | standard protocol | Specialists independently deployable and reusable |
 | Specialists not merged | one engine each | Small per-agent tool surface → deterministic tool selection |
-| Per-agent SAs + keys | vs one shared identity | Per-agent attribution, quotas, and least-privilege IAM (the Vertex service agent is also restricted for A2A) |
+| Per-agent SAs + keys | vs one shared identity | Per-agent attribution, quotas, and least-privilege IAM (the GEAP service agent is also restricted for A2A) |
 | End-user model access | app-per-user + `owner_email` binding | Per-user attribution/quota, and a stolen key is useless without the matching IAP identity |
 | ACL enforcement | supervisor callback + Firestore | Instant revoke, fail-closed, composes with runtime discovery |
 | Cross-project connectivity | PSC both directions | Private by construction; no VPN/peering; each side controls acceptance |
 | Cloud SQL access | PSC + IAM DB auth | No passwords, no public IP; the SA *is* the DB user |
 | Replicability | one environment file + manifests + converging tools | Rebuilding any project = edit `demo-environment.yaml`, run the tools ([TOOLING.md](TOOLING.md)) |
-| Registry | Vertex Agent Registry + auto-registration | The supervisor discovers specialists at deploy AND on a runtime TTL — redeploys heal themselves |
+| Registry | GEAP Agent Registry + auto-registration | The supervisor discovers specialists at deploy AND on a runtime TTL — redeploys heal themselves |

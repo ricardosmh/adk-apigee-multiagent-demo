@@ -24,7 +24,7 @@ def _entry(log, payload, *, trace=TRACE, ts_ms=0):
 
 # ── Fixtures: a Direct trace and an agent fan-out trace ──────────────────────
 def direct_entries():
-    """Browser → BFF → /llm-stream → Vertex model. Logs arrive completion-order
+    """Browser → BFF → /llm-stream → GEAP model. Logs arrive completion-order
     (inner proxy logs before the outer BFF turn) on purpose."""
     return [
         _entry("apigee-ai-logs", {
@@ -378,7 +378,7 @@ def test_narrative_text_lines_keep_their_message():
 def test_self_latency_attributes_backend_to_model_not_gateway():
     """The proxy's cumulative time is mostly backend WAIT — self latency strips
     that out: gateway+drain stays on the proxy, the model inference goes to the
-    Vertex node, and the agent keeps only its own overhead."""
+    GEAP node, and the agent keeps only its own overhead."""
     entries = [
         _entry("apigee-ai-logs", {"proxy": "gemini-llm-apiproxy",
             "timing": {"requestReceivedAt": 1000, "targetSentAt": 1010,

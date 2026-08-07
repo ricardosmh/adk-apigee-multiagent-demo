@@ -13,7 +13,7 @@ Validates the endpoint two ways before we refactor any agent onto it:
 
 The only credential needed is the Apigee `x-api-key`. In Gemini mode the genai
 SDK also sends `x-goog-api-key=$GOOGLE_API_KEY`; that can be any dummy because
-the proxy injects the real Vertex token upstream (and should strip the header).
+the proxy injects the real GEAP token upstream (and should strip the header).
 
 Config comes from .env in this directory — see .env.example.
 

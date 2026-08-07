@@ -14,7 +14,7 @@ for cloud-side setup).
    it builds a `RemoteA2aAgent` via `registry.get_remote_a2a_agent(name)`.
 2. The resolved `RemoteA2aAgent` objects are passed to `Agent(sub_agents=[...])`,
    and ADK auto-adds the `transfer_to_agent` tool.
-3. The whole `agent_runtime` is pickled and shipped to Vertex.
+3. The whole `agent_runtime` is pickled and shipped to Gemini Enterprise Agent Platform (GEAP).
 4. On cloud boot, `AgentEngineApp.set_up()` runs:
    - `vertexai.init(project, location)` — explicit, so we don't depend
      on ADC default project.
@@ -35,7 +35,7 @@ for cloud-side setup).
    redeployed specialist is followed within ~60s **with no supervisor redeploy**,
    and `--cleanup` is safe. Never removes, never raises (keeps the current set on
    any registry error), skips the supervisor itself; `_discover_agents` picks the
-   **newest** entry when a display name has duplicates (Vertex auto-registers one
+   **newest** entry when a display name has duplicates (GEAP auto-registers one
    per generation). Requires the runner SA to have `agentregistry.agents.list/get`
    (declared in `agents/runtime-manifest.yaml`). Set `DISABLE_RUNTIME_SUBAGENT_REFRESH=1`
    to rely only on the baked set.
@@ -64,10 +64,10 @@ them for experiments.
 |---|---|---|---|
 | `PROJECT_ID` | yes | — | Used for vertexai.init and SA bindings |
 | `REGION` | no | `us-central1` | Also sets `GOOGLE_CLOUD_LOCATION` |
-| `STAGING_BUCKET` | yes | — | Vertex pulls deploy pickle from here |
+| `STAGING_BUCKET` | yes | — | GEAP pulls deploy pickle from here |
 | `GEMINI_MODEL` | no | `gemini-3.1-flash-lite` | Used by the supervisor for routing decisions and synthesis |
 | `AGENT_RUNNER_SA` | yes (prod) | — | User-managed SA to run the engine |
-| `DISPLAY_NAME` | no | `a2a-supervisor-agent` | Vertex resource display name |
+| `DISPLAY_NAME` | no | `a2a-supervisor-agent` | GEAP resource display name |
 | `ORDER_AGENT_NAME`, `PRODUCT_AGENT_NAME`, `CUSTOMER_AGENT_NAME` | no | — | Pin a specific registry resource (skip discovery) |
 | `SUBAGENT_REFRESH_TTL_SECONDS` | no | `300` | Runtime registry refresh cadence (per worker process) |
 | `DISABLE_RUNTIME_SUBAGENT_REFRESH` | no | unset | `=1` to disable runtime refresh; use only the deploy-time set |

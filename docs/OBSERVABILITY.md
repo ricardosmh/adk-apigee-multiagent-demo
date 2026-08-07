@@ -310,7 +310,7 @@ library announcing itself. Harmless.
 ## The Agent Engine OTEL layer
 
 Independent of the named logs, the engines export OpenTelemetry traces + log
-events (model prompts/responses) via Vertex's built-in telemetry. Enabled by
+events (model prompts/responses) via GEAP's built-in telemetry. Enabled by
 default at deploy time (`agents/deploy_common.py::telemetry_env_vars()`):
 
 | Env var | Value | Effect |

@@ -17,7 +17,7 @@ names (values live in Secret Manager). Design + rationale in
   delete `retired`.
 - **`secrets`** — wire each app's consumer key into its `apigee-key-<agent>`
   secret in the AI project (version only if changed) + grant `secretAccessor`
-  to the agent SAs and the Vertex service agent. Validates per secret:
+  to the agent SAs and the GEAP service agent. Validates per secret:
   exists → accessors granted → **value still equals the app's current consumer
   key** (rotation drift is flagged `STALE` and fixed by the same command;
   values are compared, never printed).
@@ -69,7 +69,7 @@ Exit code is non-zero if anything is `DRIFT` / `MISSING` / `EXTRA` (CI-friendly)
   unit-tested; the write path needs live validation (data-collector TYPE drift is
   flagged MANUAL — types are immutable).
 - ✅ `provision.py secrets` — app keys → Secret Manager + accessor grants
-  (agent SA **and** Vertex service agent). Same modes: confirm / `--dry-run` /
+  (agent SA **and** GEAP service agent). Same modes: confirm / `--dry-run` /
   `--apply`. Skips (with a pointer) accessor grants for SAs that don't exist yet.
   SA creation/roles moved to `agents/provision/provision_agents.py` (context split).
 - ✅ deploy wiring — `deploy_common.apigee_secret_env_vars()` sends

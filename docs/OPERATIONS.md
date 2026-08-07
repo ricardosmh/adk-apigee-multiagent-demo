@@ -7,7 +7,7 @@ sideways, and what to do for routine maintenance.
 
 ### From the GCP console
 
-1. Vertex AI → Agent Builder → Reasoning Engines → `a2a-supervisor-agent`
+1. Gemini Enterprise Agent Platform → Agent Builder → Reasoning Engines → `a2a-supervisor-agent`
 2. Click **Test** and send a message.
 
 ### From the CLI
@@ -83,7 +83,7 @@ Set at deploy time via env vars (default-on; opt out with
 `DISABLE_DEFAULT_TELEMETRY=1`). Can also be flipped post-deploy from the
 console:
 
-1. Vertex AI → Reasoning Engines → `<engine>` → **Observability** tab
+1. Gemini Enterprise Agent Platform → Reasoning Engines → `<engine>` → **Observability** tab
 2. Toggle **"Enable instrumentation of OpenTelemetry traces and logs"**
 3. Toggle **"Enable logging of prompt inputs and response outputs"**
 
@@ -102,7 +102,7 @@ python agents/provision/deploy_agents.py <order|product|customer|supervisor>
 ```
 
 After redeploying a specialist, Agent Registry gets a fresh entry AUTOMATICALLY
-(Vertex auto-registration on `agent_engines.create`), and **the supervisor
+(GEAP auto-registration on `agent_engines.create`), and **the supervisor
 follows the new engine within ~60s on its own** — it re-points its sub-agents
 against the registry every turn (A2A_INTEGRATION §3.4). So there is normally
 **no manual step and no supervisor redeploy** after a specialist rollout. Verify
@@ -173,9 +173,9 @@ registry entry may point at the id you deleted — `--list-registry` shows it
 ## Cost monitoring
 
 Budget alerts on:
-- **Vertex AI Reasoning Engine** SKUs (compute + invocation)
+- **Gemini Enterprise Agent Platform Reasoning Engine** SKUs (compute + invocation)
 - **Cloud Logging** ingestion (full prompt content can balloon)
-- **Vertex AI Generative AI** (Gemini + Anthropic token usage)
+- **Gemini Enterprise Agent Platform Generative AI** (Gemini + Anthropic token usage)
 
 If logging cost gets ugly, set `DISABLE_DEFAULT_TELEMETRY=1` and
 redeploy: it removes the env vars that enable content capture but keeps

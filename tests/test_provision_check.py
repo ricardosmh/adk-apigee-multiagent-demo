@@ -141,7 +141,7 @@ def test_derive_plan_datacollector_type_drift_is_manual():
 
 # ── secrets: app keys → Secret Manager (pure) ─────────────────────────────────
 SECRETS_M = {
-    "meta": {"org": "org", "ai_project": "proj", "vertex_service_agent": "svc@gcp-sa-aiplatform.iam.gserviceaccount.com"},
+    "meta": {"org": "org", "ai_project": "proj", "geap_service_agent": "svc@gcp-sa-aiplatform.iam.gserviceaccount.com"},
     "serviceAccounts": [
         {"agent": "supervisor", "name": "a2a-supervisor-sa", "secretAccessor": ["apigee-key-supervisor"]},
         {"agent": "order", "name": "a2a-order-sa", "secretAccessor": ["apigee-key-order"]},

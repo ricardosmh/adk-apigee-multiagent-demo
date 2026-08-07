@@ -79,6 +79,6 @@ curl -s -o /dev/null -w "%{http_code}\n" \
 # Expect: 200
 ```
 
-If 403: the engine is running as the Vertex Service Agent, not the
+If 403: the engine is running as the GEAP Service Agent, not the
 user-managed runner SA. Confirm `AGENT_RUNNER_SA` in this agent's `.env`
 (the deploy preflight checks it against `runtime-manifest.yaml`).

@@ -391,7 +391,7 @@ def _env(project=None, region=None):
 
 def preflight_adc(project: str, staging_bucket: str, _lookup=None) -> bool:
     """Engine deploys authenticate via Application Default Credentials (the
-    Vertex SDK) — every phase before this one uses the gcloud CLI credential,
+    GEAP SDK) — every phase before this one uses the gcloud CLI credential,
     so a stale or wrong ADC surfaces HERE first. Seen live: all four deploys
     404ing `The requested project was not found` from storage(.mtls)
     .googleapis.com while every gcloud call in the run succeeded — the ADC was
@@ -421,7 +421,7 @@ def preflight_adc(project: str, staging_bucket: str, _lookup=None) -> bool:
     print(f"""\
 ERROR: Application Default Credentials can't reach the staging bucket.
   {problem}
-  Engine deploys run on ADC (the Vertex SDK), NOT your `gcloud auth login`
+  Engine deploys run on ADC (the GEAP SDK), NOT your `gcloud auth login`
   credential — everything before this phase used gcloud, so a stale ADC from
   an earlier login bites here first. Fix (same account as gcloud{f": {acct}" if acct else ""}):
       gcloud auth application-default login
@@ -462,7 +462,7 @@ def cmd_sync_registry(args, agents, project_manifest):
     """PRUNE stale Agent Registry entries so exactly one per agent survives —
     the one pointing at the newest LIVE engine.
 
-    Vertex auto-registers a fresh entry on every engine deploy, and v1alpha has
+    GEAP auto-registers a fresh entry on every engine deploy, and v1alpha has
     no PatchAgent (retarget-by-PATCH 404s), so 'sync' = DELETE the duplicates.
     The supervisor already prefers the newest entry at runtime; pruning keeps the
     registry honest and stops a later --cleanup from stranding a picker on a

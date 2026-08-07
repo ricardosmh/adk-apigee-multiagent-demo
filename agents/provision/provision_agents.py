@@ -4,7 +4,7 @@
 Reconciles everything the agent deploys need on the AI project, declared in
 runtime-manifest.yaml:
   * required Google APIs enabled (infra.services)
-  * the staging bucket exists + the Vertex CONTROL-PLANE service agent can read
+  * the staging bucket exists + the GEAP CONTROL-PLANE service agent can read
     the deploy pickle from it (storage.objectAdmin)
   * one runtime SA per agent + its project roles
   * per-SA staging-bucket access (telemetry/boot) + the deployer's actAs
@@ -73,18 +73,18 @@ def compare_services(required: list[str], enabled: set | None,
             for s in required]
 
 
-def compare_bucket(bucket: str | None, exists: bool, vertex_agent: str | None,
+def compare_bucket(bucket: str | None, exists: bool, geap_agent: str | None,
                    bucket_members: set | None) -> list:
-    """Staging bucket exists + the Vertex control-plane service agent can read
+    """Staging bucket exists + the GEAP control-plane service agent can read
     the deploy pickle from it. Skipped (empty) when STAGING_BUCKET is unset."""
     if not bucket:
         return []
     if not exists:
         return [_f(MISSING, "bucket", bucket, "does not exist")]
     out = [_f(OK, "bucket", bucket, "exists ✓")]
-    if vertex_agent is not None:
-        has = f"serviceAccount:{vertex_agent}" in (bucket_members or set())
-        out.append(_f(OK if has else DRIFT, "vertexAgentAccess", vertex_agent,
+    if geap_agent is not None:
+        has = f"serviceAccount:{geap_agent}" in (bucket_members or set())
+        out.append(_f(OK if has else DRIFT, "geapAgentAccess", geap_agent,
                       "objectAdmin ✓" if has else "no objectAdmin on the staging bucket"
                       " (CreateReasoningEngine can't read the deploy pickle)"))
     return out
@@ -283,7 +283,7 @@ def _grant(label: str, args: list[str], attempts: int = 3) -> bool:
     """IAM bindings on JUST-created identities lose a propagation race on
     fresh projects ('member does not exist' seconds after create), and
     gcloud's read-modify-write can abort on concurrent policy writes — retry
-    briefly and NEVER fail silently. Seen live: the vertex agent's dns.peer /
+    briefly and NEVER fail silently. Seen live: the geap agent's dns.peer /
     networkAdmin and the first agent SA's roles all vanished into a second
     apply pass with no output."""
     ok, r = False, None
@@ -352,7 +352,7 @@ def _bucket_exists(bucket: str) -> bool:
     return _gcloud(["storage", "buckets", "describe", f"gs://{bucket}"])[0]
 
 
-def _vertex_service_agent(project: str) -> str | None:
+def _geap_service_agent(project: str) -> str | None:
     proj = _gcloud_json(["projects", "describe", project])
     if not proj:
         return None
@@ -653,7 +653,7 @@ def _project_number(project: str) -> str | None:
     return _pn_cache[project]
 
 
-def _apply_infra(infra, project, region, bucket, vertex_agent, enabled=None):
+def _apply_infra(infra, project, region, bucket, geap_agent, enabled=None):
     services = infra.get("services", [])
     # Only enable what's actually MISSING. `enabled=None` means the live listing
     # failed (compare reported UNKNOWN) → fall back to enabling the whole list,
@@ -672,25 +672,25 @@ def _apply_infra(infra, project, region, bucket, vertex_agent, enabled=None):
             _gcloud(["storage", "buckets", "create", f"gs://{bucket}",
                      f"--project={project}", f"--location={region}",
                      "--uniform-bucket-level-access", "--quiet"])
-        if vertex_agent:
-            # Fresh project: the Vertex SERVICE AGENT doesn't exist until first
+        if geap_agent:
+            # Fresh project: the GEAP SERVICE AGENT doesn't exist until first
             # use — create it explicitly or the grant below fails (silently,
-            # seen live: the vertexAgentAccess row survived two applies).
+            # seen live: the geapAgentAccess row survived two applies).
             _gcloud(["beta", "services", "identity", "create",
                      "--service=aiplatform.googleapis.com", f"--project={project}"])
             # identity create returns BEFORE the agent is visible to IAM on a
             # brand-new project — every grant below goes through _grant's
             # retry instead of losing that race.
-            _grant("vertex agent bucket grant",
+            _grant("geap agent bucket grant",
                    ["storage", "buckets", "add-iam-policy-binding", f"gs://{bucket}",
-                    "--member", f"serviceAccount:{vertex_agent}",
+                    "--member", f"serviceAccount:{geap_agent}",
                     "--role", infra["staging_bucket_role"], "--quiet"])
-            # Engines' DNS PEERING (PSC-I DnsPeeringConfig) runs as the Vertex
+            # Engines' DNS PEERING (PSC-I DnsPeeringConfig) runs as the GEAP
             # service agent — it needs dns.peer on the project hosting the zone.
             if infra.get("network", {}).get("apigee_psc"):
-                _grant("vertex agent dns.peer",
+                _grant("geap agent dns.peer",
                        ["projects", "add-iam-policy-binding", project,
-                        "--member", f"serviceAccount:{vertex_agent}",
+                        "--member", f"serviceAccount:{geap_agent}",
                         "--role", "roles/dns.peer", "--quiet"])
             # PSC-I itself: the service agent READS AND UPDATES the network
             # attachment (registers its connection) — networkUser alone 403s
@@ -698,9 +698,9 @@ def _apply_infra(infra, project, region, bucket, vertex_agent, enabled=None):
             # (docs/PRIVATE_APIGEE.md; seen live: all 4 engine deploys 403'd
             # on networkAttachments.get in the fresh project).
             if infra.get("network", {}).get("network_attachment"):
-                _grant("vertex agent networkAdmin",
+                _grant("geap agent networkAdmin",
                        ["projects", "add-iam-policy-binding", project,
-                        "--member", f"serviceAccount:{vertex_agent}",
+                        "--member", f"serviceAccount:{geap_agent}",
                         "--role", "roles/compute.networkAdmin", "--quiet"])
 
 
@@ -787,7 +787,7 @@ def main(argv=None) -> int:
           + "\n")
     enabled, svc_err = _enabled_services(project)
     bucket_ok = _bucket_exists(bucket) if bucket else False
-    vertex_agent = _vertex_service_agent(project) if bucket else None
+    geap_agent = _geap_service_agent(project) if bucket else None
     existing = {sa_email(s["sa"], project) for s in identities.values()
                 if _sa_exists(sa_email(s["sa"], project))}
     role_map = _project_role_map(project)
@@ -795,10 +795,10 @@ def main(argv=None) -> int:
     actas = {e: _actas_members(e, infra["deployer_role"]) for e in existing}
     net = infra.get("network")
     dns_peer_findings = []
-    if net and net.get("apigee_psc") and vertex_agent:
-        has_peer = "roles/dns.peer" in role_map.get(vertex_agent, set())
-        dns_peer_findings = [_f(OK if has_peer else DRIFT, "vertexDnsPeer",
-                                vertex_agent,
+    if net and net.get("apigee_psc") and geap_agent:
+        has_peer = "roles/dns.peer" in role_map.get(geap_agent, set())
+        dns_peer_findings = [_f(OK if has_peer else DRIFT, "geapDnsPeer",
+                                geap_agent,
                                 "dns.peer ✓" if has_peer else
                                 "lacks roles/dns.peer — engines' DNS peering to "
                                 "apigee.com. fails (internal.apigee.com unresolvable)")]
@@ -815,17 +815,17 @@ def main(argv=None) -> int:
         else:
             dns_peer_findings.append(_f(DRIFT, "buildSA", "compute-default",
                                         "project number unknown — state UNKNOWN"))
-    if net and net.get("network_attachment") and vertex_agent:
-        has_na = "roles/compute.networkAdmin" in role_map.get(vertex_agent, set())
-        dns_peer_findings.append(_f(OK if has_na else DRIFT, "vertexNetworkAdmin",
-                                    vertex_agent,
+    if net and net.get("network_attachment") and geap_agent:
+        has_na = "roles/compute.networkAdmin" in role_map.get(geap_agent, set())
+        dns_peer_findings.append(_f(OK if has_na else DRIFT, "geapNetworkAdmin",
+                                    geap_agent,
                                     "compute.networkAdmin ✓" if has_na else
                                     "lacks roles/compute.networkAdmin — PSC-I engine "
                                     "deploys 403 on networkAttachments.get/update"))
     findings = (compare_services(infra.get("services", []), enabled, svc_err)
                 + dns_peer_findings
                 + compare_ai_network(net, fetch_ai_network(project, net))
-                + compare_bucket(bucket, bucket_ok, vertex_agent, bucket_members)
+                + compare_bucket(bucket, bucket_ok, geap_agent, bucket_members)
                 + compare_agent_sas(identities, existing, role_map, project)
                 + compare_grants(agents, project, bucket_members, actas, deployer))
     acl = m.get("acl")
@@ -843,7 +843,7 @@ def main(argv=None) -> int:
         if n_bad:
             print(f"nothing written — {n_bad} finding(s) pending.")
         return 1 if n_bad else 0
-    _apply_infra(infra, project, region, bucket, vertex_agent, enabled)
+    _apply_infra(infra, project, region, bucket, geap_agent, enabled)
     _apply_ai_network(net, project)
     _apply_build_sa(infra, project)
     _apply(identities, infra, project, bucket, deployer)

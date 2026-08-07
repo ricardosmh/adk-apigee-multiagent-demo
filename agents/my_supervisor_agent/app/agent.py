@@ -160,7 +160,7 @@ def _discover_agents() -> dict[str, str]:
     """{displayName: resourceName} for every registered agent, choosing the
     NEWEST entry when a display name has duplicates. Blocking I/O.
 
-    Vertex auto-registers a fresh registry entry per engine generation, so after
+    GEAP auto-registers a fresh registry entry per engine generation, so after
     a redeploy several `product_agent` entries linger — older ones point at
     engines that a later --cleanup deletes. Last-wins picked them arbitrarily,
     so the supervisor could resolve to a dead engine and A2A-403. Prefer the

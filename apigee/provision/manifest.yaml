@@ -15,7 +15,7 @@ meta:
   # run.invoker on the services project only). deploy_proxies.sh reads this
   # (and deploy_sa above) automatically — no env vars needed.
   ecommerce_deploy_sa: cloud-run-invoker@${projects.apigee}.iam.gserviceaccount.com
-  # vertex_service_agent is DERIVED at run time (service-<AI PROJECT NUMBER>@
+  # geap_service_agent is DERIVED at run time (service-<AI PROJECT NUMBER>@
   # gcp-sa-aiplatform...) — no project number lives in any manifest.
   # deploy_sa needs roles/aiplatform.user on ai_project (cross-project);
   # deployer needs iam.serviceAccounts.actAs on deploy_sa (deploy time); the
@@ -25,7 +25,7 @@ meta:
   # Per-agent RUNTIME SAs are NOT defined here — they live in
   # agents/runtime-manifest.yaml; serviceAccounts below only NAMES them
   # so `secrets` can grant secretAccessor (runtime read) alongside
-  # vertex_service_agent (deploy-time SecretRef resolution).
+  # geap_service_agent (deploy-time SecretRef resolution).
 
 targetServers:                      # env-scoped (env: sandbox-internal)
   - {name: ts-aiplatform-api,              host: aiplatform.googleapis.com,             port: 443, ssl: true}
@@ -60,7 +60,7 @@ sharedFlowDeps: []
 # apigee_service_agent = service-<ORG_PROJECT_NUMBER>@gcp-sa-apigee.iam.
 # gserviceaccount.com (number resolved at run time; exports traceConfig spans).
 telemetryGrants:
-  - {member: deploy_sa,            role: roles/aiplatform.user}    # proxies call Vertex models
+  - {member: deploy_sa,            role: roles/aiplatform.user}    # proxies call GEAP models
   - {member: deploy_sa,            role: roles/logging.logWriter}
   # cloudtrace.agent pairs with the OPTIONAL traceConfig block above —
   # uncomment together (least privilege: no exporter, no trace-write grant):
@@ -155,7 +155,7 @@ endUsers:
 
 # SECRETS BRIDGE — the only thing the gateway side knows about agent identity.
 # Each secret is fed from its app's consumer key (`secrets` command) and grants
-# secretAccessor to the named SAs (+ the Vertex service agent, for deploy-time
+# secretAccessor to the named SAs (+ the GEAP service agent, for deploy-time
 # SecretRef resolution). SA LIFECYCLE (creation, project roles) is the AGENT
 # side's concern: agents/runtime-manifest.yaml + agents/provision/provision_agents.py.
 # tests/test_manifest_consistency.py keeps the two manifests agreeing.

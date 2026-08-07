@@ -18,7 +18,7 @@ A developer with **three GCP projects**:
 | Project | State you start with | Becomes |
 |---|---|---|
 | **apigee** | A working **Apigee X org** (this is a prerequisite — see below) | The AI + API gateway: 7 proxies, products, per-agent/per-user API keys, quotas |
-| **ai** | Empty | Vertex AI Agent Engine (4 agents), the BFF on Cloud Run behind IAP, Firestore ACL, Secret Manager, ALL telemetry (logs + traces) |
+| **ai** | Empty | Gemini Enterprise Agent Platform (GEAP) Agent Engine (4 agents), the BFF on Cloud Run behind IAP, Firestore ACL, Secret Manager, ALL telemetry (logs + traces) |
 | **backend** | Empty | 3 FastAPI microservices on Cloud Run + Cloud SQL MySQL, behind an internal ALB, exposed to Apigee over PSC |
 
 **Definition of done**: the Phase E smoke test passes — both UI views answer,
@@ -118,7 +118,7 @@ each one goes:
      Run it AFTER Phase D has created the `agent-bff` service; ~30 s later the
      BFF answers 302 (login) instead of 502.
 2. **Claude models** in the **ai** project (Model Garden partner terms have no
-   public API): Vertex AI → Model Garden → **Claude Haiku 4.5** → Enable, and
+   public API): Gemini Enterprise Agent Platform → Model Garden → **Claude Haiku 4.5** → Enable, and
    **Claude Sonnet 4.6** → Enable. Gemini needs nothing.
 
 ### 4. Local toolchain
@@ -236,7 +236,7 @@ Creates: APIs, `ai-vpc` + subnets, the engines' **network attachment**, the
 **PSC endpoint + private DNS toward Apigee** (`internal.apigee.com` — includes
 patching the Apigee instance's `consumerAcceptList`, an LRO that takes a few
 minutes to flip the connection to `ACCEPTED`), the Artifact Registry repo and
-staging bucket, five service accounts, the four Vertex service-agent grants
+staging bucket, five service accounts, the four GEAP service-agent grants
 fresh projects lack, and the Firestore **ACL** database with its seed
 roles/users.
 
@@ -340,7 +340,7 @@ as drift).
 |---|---|---|
 | First provisioning pass shows many `UNKNOWN`/listing errors | APIs not enabled yet — listings fail before enablement | Expected. Apply (it enables APIs first), then re-run; green by pass 2–3 |
 | `gcloud` step hangs ~10 min then times out | Fresh-project interactive "API not enabled. Enable and retry?" prompt with captured stdin | Already hardened in the tools (`CLOUDSDK_CORE_DISABLE_PROMPTS=1`); if you script your own gcloud, do the same |
-| Engine deploy 403 `compute.networkAttachments.get` | Vertex service agent lacks rights on the attachment | `provision_agents.py` grants `compute.networkAdmin` (+ `dns.peer`, bucket access, identity creation) — re-run it, wait ~2 min for IAM propagation |
+| Engine deploy 403 `compute.networkAttachments.get` | GEAP service agent lacks rights on the attachment | `provision_agents.py` grants `compute.networkAdmin` (+ `dns.peer`, bucket access, identity creation) — re-run it, wait ~2 min for IAM propagation |
 | All-but-one parallel engine deploys fail with opaque `500 … 13:` | First-ever PSC interfaces racing on a brand-new network attachment | Re-run the failed agents **one at a time**; once interfaces exist the race disappears |
 | BFF/agents: `stream failed` / `All connection attempts failed`, zero Apigee logs | PSC endpoint to Apigee is `PENDING` — the instance's `consumerAcceptList` doesn't include the AI project | `provision_agents.py` flags it and apply patches the accept list (LRO, ~5 min); `--check` until the endpoint row says `ACCEPTED` |
 | `consumerAcceptList update failed: 400 … resource is locked by another operation` | An Apigee instance operation (create/update) is in flight — the accept-list PATCH can't take the lock | Transient: wait for the instance operation to finish, re-run `provision_agents.py`; then `--check` until `ACCEPTED` |
@@ -350,7 +350,7 @@ as drift).
 | Every BFF request answers **502** with `x-goog-iap-generated-response: true` and body `Empty Google Account OAuth client ID(s)/secret(s)` | The AI project has no usable IAP OAuth client — on org-owned projects the Internal consent screen is missing; on **no-org** projects the Google-managed client doesn't exist at all | Console prerequisite #1 above (no-org path: External consent screen + test users + custom OAuth client + `iap settings set`) |
 | Agents answer but every tool call fails (`Tool 'listProducts' not found. Available tools: transfer_to_agent`); gateway shows `mcp-server` 503 `NoResolvedHost: Unable to resolve host mcp.apigee.internal` | Apigee's **managed MCP backend** hasn't finished provisioning — it builds asynchronously after the first `/mcp` proxy deploy, and the proxy's deployment stays `PROGRESSING` until then (observed stuck for hours on an EVALUATION org; PAYG INTERMEDIATE provisioned routinely) | Wait for the `mcp-server-apiproxy` deployment to reach `READY`; if it never does on an eval org, upgrade to PAYG (billing-type prerequisite above). Check with: `curl -H "Authorization: Bearer $(gcloud auth print-access-token)" https://apigee.googleapis.com/v1/organizations/<ORG>/environments/<ENV>/apis/mcp-server-apiproxy/revisions/1/deployments` |
 | Direct view: `403` on a valid-looking key | Key belongs to a different user — the gateway binds each key to its owner's IAP email (`owner_email`) | Use the key issued for the signed-in account (`provision.py users`) |
-| `CreateReasoningEngine … storage.objects.get` | Vertex service agent can't read the staging bucket | `provision_agents.py` re-run (it creates the service agent explicitly, then grants) |
+| `CreateReasoningEngine … storage.objects.get` | GEAP service agent can't read the staging bucket | `provision_agents.py` re-run (it creates the service agent explicitly, then grants) |
 | Specialist `/a2a/v1/card` returns 403 | Engine not running as its per-agent SA | `deploy_agents.py --check` shows the SA mismatch; redeploy the agent |
 | Supervisor 403s to a `reasoningEngines/<id>` that no longer exists | A `--cleanup` deleted an engine a stale/duplicate registry entry still pointed at | Normally self-corrects — the supervisor re-points to the newest live engine each turn (~60s, A2A_INTEGRATION §3.4). If it persists: `deploy_agents.py --list-registry` (marks entries LIVE/DEAD) and `--sync-registry` prunes the stale duplicates |
 | SQL seed import permission errors | Instance SA can't read the staging bucket object | `provision_services.py seed` handles the grant; re-run it |
@@ -358,7 +358,7 @@ as drift).
 | `provision.py apigee`: traceConfig row `MANUAL … HTTP 400: distributed tracing not enabled …` | The optional `traceConfig` block was uncommented on an env type below COMPREHENSIVE (prerequisites §1) | Re-comment the block (the demo doesn't need it), or upgrade the env type and re-run — everything else applies normally either way |
 | Proxy deploy 403 `iam.serviceAccounts.actAs … apigee-ai-consumer@…` | The AI-side deploy SA doesn't exist / you lack actAs on it (fresh org) | Re-run `provision.py apigee` — it ensures **both** deploy SAs exist and grants the deployer actAs; wait ~1 min for IAM, then redeploy the failed proxies |
 | Both UI views fail; Apigee debug shows `AccessTokenGenerationFailure — Failed to generate OAuth2 access token for service account …` | The **Apigee service agent** lacks `serviceAccountTokenCreator` on the deploy SA — deploys fine (that's actAs), but the runtime can't mint the proxy's Google tokens. Standard org provisioning grants it; fresh/Terraform orgs may not | Re-run `provision.py apigee` — the deploySA rows now check + grant it on both SAs; ~1–2 min IAM propagation, then retry |
-| **Every** engine deploy fails `404 … storage(.mtls).googleapis.com … The requested project was not found` while all the gcloud-based phases passed | Stale **Application Default Credentials** — engine deploys run on ADC (the Vertex SDK), not your `gcloud auth login`; an ADC from an earlier login can't see the fresh project, so the SDK's staging-bucket lookup fails and it tries to *create* the bucket | `gcloud auth application-default login` (same account as gcloud) + `gcloud auth application-default set-quota-project <ai project>`; if the mTLS endpoint keeps failing after that: `gcloud config set context_aware/use_client_certificate false`. `deploy_agents.py` now checks ADC up front and prints exactly this |
+| **Every** engine deploy fails `404 … storage(.mtls).googleapis.com … The requested project was not found` while all the gcloud-based phases passed | Stale **Application Default Credentials** — engine deploys run on ADC (the GEAP SDK), not your `gcloud auth login`; an ADC from an earlier login can't see the fresh project, so the SDK's staging-bucket lookup fails and it tries to *create* the bucket | `gcloud auth application-default login` (same account as gcloud) + `gcloud auth application-default set-quota-project <ai project>`; if the mTLS endpoint keeps failing after that: `gcloud config set context_aware/use_client_certificate false`. `deploy_agents.py` now checks ADC up front and prints exactly this |
 | Fresh org: the LLM API products have **no per-model allow-list / no LLM token quota** (console shows none; the manifest declares `llmModels` + `llmQuota`) | An older `provision.py` CREATEd products without the LLM constructs (it assumed products always pre-exist; UPDATE was the only path that rendered them) | Pull + re-run `provision.py apigee` — `--check` flags the products as DRIFT (`llmQuota=-/-/- want …; llmOps missing …`) and apply rebuilds them in place |
 | A service's **first DB-touching request** 500s (`Can't connect to MySQL server on '10.0.0.x' (timed out)` in its Cloud Run log), then works on retry; `/health` was fine throughout | First connections through a freshly programmed Cloud SQL PSC / VPC-egress path can exceed the connect timeout on a brand-new deploy — the dataplane warms on first use | Self-corrects once warm. The services now retry the connect internally (3×, 10s timeout) — if you hit this on an older build, pull + `python services/provision/deploy_services.py --all` |
 

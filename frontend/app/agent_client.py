@@ -2,7 +2,7 @@
 
 The agent is reached **only through Apigee** — the BFF posts to the `/ai-agents`
 proxy with an `x-api-key`, and Apigee injects the Google SA token and rewrites to
-the full Vertex reasoning-engine URL. The client sends just the bare engine id +
+the full GEAP reasoning-engine URL. The client sends just the bare engine id +
 the slash verb (`/agents/<id>/<query|streamQuery>`).
 
 Session state lives server-side in Agent Engine, keyed by user_id. v1 creates a

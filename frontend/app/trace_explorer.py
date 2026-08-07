@@ -41,7 +41,7 @@ C_BFF = "#2563eb"      # front-ai-logs (blue)
 C_AGENT = "#7c3aed"    # agent-ai-logs (purple)
 C_APIGEE = "#f59e0b"   # apigee-ai-logs (amber)
 C_SVC = "#16a34a"      # services-ai-logs (green)
-C_MODEL = "#db2777"    # Vertex models (pink — AI project, no own log)
+C_MODEL = "#db2777"    # GEAP models (pink — AI project, no own log)
 C_DATA = "#0891b2"     # Cloud SQL (cyan — no own log)
 
 
@@ -71,7 +71,7 @@ _NODES = [
     {"id": "agent:customer", "label": "customer_agent", "sub": "engine",
      "group": "ai", "color": C_AGENT, "col": 4, "row": 3},
 
-    {"id": "model-vertex", "label": "Vertex models", "sub": "Gemini · Claude",
+    {"id": "model-vertex", "label": "GEAP models", "sub": "Gemini · Claude",
      "group": "ai", "color": C_MODEL, "col": 5, "row": 0, "derived": True},
 
     {"id": "apigee:mcp-server", "label": "/mcp", "sub": "Apigee",

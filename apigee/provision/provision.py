@@ -8,7 +8,7 @@ across agents/provision/provision_agents.py):
                     apps, retired resources
     secrets         each app's consumer key → its Secret Manager secret
                     (AI project) + secretAccessor for agent SAs and the
-                    Vertex service agent
+                    GEAP service agent
 
     --check         read-only findings report (OK/DRIFT/MISSING/EXTRA);
                     exit 1 on any delta (CI gate)
@@ -372,7 +372,7 @@ def fetch_trace_config(org, env, token):
         return {"_error": f"HTTP {e.code}: {body or e.reason}"}
 
 
-def _vertex_service_agent(ai_project: str) -> str | None:
+def _geap_service_agent(ai_project: str) -> str | None:
     """service-<AI PROJECT NUMBER>@gcp-sa-aiplatform... — DERIVED so no project
     number ever lives in a manifest. None when the lookup fails (callers skip
     the grant and the accessor check reports it)."""
@@ -686,7 +686,7 @@ def _execute(a, m, token):
         if verb == "CREATE":
             display = ("Ecommerce proxies -> Cloud Run invoker"
                        if n == m["meta"].get("ecommerce_deploy_sa")
-                       else "Apigee AI proxies deploy SA (Vertex + logging)")
+                       else "Apigee AI proxies deploy SA (GEAP + logging)")
             _gcloud(["iam", "service-accounts", "create", n.split("@")[0],
                      f"--project={org_project}",
                      f"--display-name={display}"])
@@ -900,9 +900,9 @@ def _sa_email(name, project):
 def derive_secrets(m):
     """Manifest -> [{name, source_app, accessors}]. A secret is fed by its source
     Apigee app's consumer key; accessors = the agent SA(s) that list it under
-    secretAccessor, plus the Vertex service agent (deploy-time SecretRef)."""
+    secretAccessor, plus the GEAP service agent (deploy-time SecretRef)."""
     proj = m["meta"]["ai_project"]
-    vertex = m["meta"].get("vertex_service_agent") or _vertex_service_agent(proj)
+    geap = m["meta"].get("geap_service_agent") or _geap_service_agent(proj)
     acc = {}
     for sa in m.get("serviceAccounts", []):
         for sec in sa.get("secretAccessor", []) or []:
@@ -915,8 +915,8 @@ def derive_secrets(m):
     out = []
     for name in sorted(set(acc) | set(src)):
         members = set(acc.get(name, set()))
-        if vertex:
-            members.add(vertex)
+        if geap:
+            members.add(geap)
         out.append({"name": name, "source_app": src.get(name), "accessors": sorted(members)})
     return out
 

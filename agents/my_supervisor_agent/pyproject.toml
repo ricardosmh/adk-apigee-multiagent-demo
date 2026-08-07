@@ -25,7 +25,7 @@ dependencies = [
     "google-cloud-logging>=3.10",   # named agent-ai-logs + trace attribute
     "httpx",
     # OpenTelemetry instrumentation — required for traces to include spans
-    # for outbound HTTP (A2A, MCP), gRPC (Vertex), and Gemini calls. Without
+    # for outbound HTTP (A2A, MCP), gRPC (GEAP), and Gemini calls. Without
     # these, the "OTEL traces + prompt/response logging" toggle still emits
     # framework-level spans but skips the call-site detail you need to find
     # latency bottlenecks.

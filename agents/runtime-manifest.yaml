@@ -3,7 +3,7 @@
 # Consumers:
 #   - agents/provision/provision_agents.py — check/apply: create each SA,
 #     bind its roles, grant staging-bucket access + the deployer's actAs.
-#     (also: required APIs, the staging bucket + Vertex-agent read grant.)
+#     (also: required APIs, the staging bucket + GEAP-agent read grant.)
 #   - agents/provision/deploy_agents.py — the central deploy tool: deploy /
 #     --check (live engines vs this file) / --cleanup (stale generations).
 #   - agents/deploy_common.preflight_identity() — at deploy, validates the live
@@ -31,7 +31,7 @@ agents:
     dir: my_supervisor_agent
     sa: a2a-supervisor-sa
     roles:                            # granted on `project`
-      - roles/aiplatform.user         # call Vertex APIs incl. specialist engines (A2A)
+      - roles/aiplatform.user         # call GEAP APIs incl. specialist engines (A2A)
       - roles/agentregistry.viewer    # runtime sub-agent discovery — SUPERVISOR ONLY
       - roles/datastore.viewer        # Datastore reads — SUPERVISOR ONLY
       - roles/cloudtrace.agent        # OTEL span export
@@ -141,7 +141,7 @@ infra:
   region: ${regions.ai}
   # Staging bucket (deploy pickle + telemetry). Default derives from the
   # project; $STAGING_BUCKET still overrides. The role is granted to each
-  # runner SA AND to the Vertex control-plane service agent (deploy pickle).
+  # runner SA AND to the GEAP control-plane service agent (deploy pickle).
   staging_bucket: ${projects.ai}-a2a-demo-staging
   # Fresh post-2024 projects run BFF image builds as the COMPUTE DEFAULT SA,
   # which starts with no roles (seen live: 403 on the cloudbuild source

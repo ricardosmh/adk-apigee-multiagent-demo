@@ -14,7 +14,7 @@ Architecture context (who calls what, with which credential):
 | Proxy | Base path | Fronts | Caller | Deploy SA |
 |---|---|---|---|---|
 | `supervisor-agent-endpoint` | `/ai-agents` | The supervisor engine: `/agents/{id}/sessions*` + `/agents/{id}/query\|streamQuery` rewritten to the full `reasoningEngines/…` resource | BFF (app key `agents-bff`) | AI deploy SA (`meta.deploy_sa`) |
-| `gemini-llm-apiproxy` | `/aiplatform/v1beta` | Vertex model calls from the **agents** (the google-genai SDK appends `/models/<model>:streamGenerateContent`) | each agent (its own key) | AI deploy SA |
+| `gemini-llm-apiproxy` | `/aiplatform/v1beta` | GEAP model calls from the **agents** (the google-genai SDK appends `/models/<model>:streamGenerateContent`) | each agent (its own key) | AI deploy SA |
 | `unified-llm-endpoint-sse-apiproxy` | `/llm-stream` | Model calls from the **Direct view**: `POST /prompt` (SSE), routed to Gemini or Claude targets by model name; enforces the key↔IAP-email binding (`owner_email`) and the per-user LLM token quota | end users (personal keys) | AI deploy SA |
 | `mcp-server-apiproxy` | `/mcp` | The MCP tool server (StreamableHTTP) | specialists (their keys) | none (no Google token minted) |
 | `ecommerce-customer-management-apiproxy` | `/customer-management` | customers-service through the backend ILB | MCP server | ecommerce invoker SA (`meta.ecommerce_deploy_sa`) |
@@ -52,7 +52,7 @@ defaults to the dedicated invoker declared in
 - **SSE**: the streaming surfaces set `response.streaming.enabled`; that's
   also why the gateway never buffers (and never logs) response bodies.
 - `gemini-llm`'s `JS-strip-part-metadata` removes the `partMetadata` field
-  ADK attaches to request parts (Vertex rejects unknown fields).
+  ADK attaches to request parts (GEAP rejects unknown fields).
 
 ## Editing a proxy
 

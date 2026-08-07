@@ -61,7 +61,7 @@ it, so the host must run the same ADK as the engines
 - ✅ `deploy_agents.py` — deploy / `--check` / `--cleanup` all validated live
   (parallel four-agent run + stale-generation cleanup). The legacy per-agent
   `deploy.py` scripts and `deploy_all_a2a.sh` are DELETED — `provision_agents.py`
-  owns the infra bootstrap (APIs, bucket, Vertex-agent grant) declared in the
+  owns the infra bootstrap (APIs, bucket, GEAP-agent grant) declared in the
   manifest, and `deploy_agents.py` owns deploys.
 - ✅ ACL store (phase 1): manifest `acl:` block → Firestore database +
   seed `admin` role (`agents: ["*"]`, `is_admin`) + seed users, reconciled by
@@ -89,7 +89,7 @@ worth knowing when you run its Phase C here:
   (global routing) + subnets, the engines' network attachment, the PSC
   endpoint + private DNS to Apigee (including the instance's
   `consumerAcceptList` patch — an LRO; re-check until `ACCEPTED`), the AR
-  repo + staging bucket, five SAs with the four Vertex service-agent grants
+  repo + staging bucket, five SAs with the four GEAP service-agent grants
   fresh projects lack, and Firestore + the ACL seed. Fresh project: run,
   apply, re-run until green (~2 passes).
 - `apigee/provision/provision.py secrets` must run **after** it (the accessor

@@ -2,7 +2,7 @@
 
 The AI side of the demo: a **supervisor** that delegates over the A2A
 protocol to three **specialists** (orders, products, customers), all running
-as separate Vertex AI Agent Engine deployments in the AI project. Every model
+as separate Gemini Enterprise Agent Platform (GEAP) Agent Engine deployments in the AI project. Every model
 call goes through the Apigee LLM gateway; every tool call through the Apigee
 MCP gateway ([docs/ARCHITECTURE.md](../docs/ARCHITECTURE.md)).
 

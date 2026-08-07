@@ -75,7 +75,7 @@ env literals, the two Apigee keys as Secret Manager references. The essentials:
 
 The Agent view reaches the supervisor **only through Apigee**: the BFF posts
 `…/ai-agents/<id>/streamQuery` with `x-api-key`, and Apigee injects the
-Google SA token and rewrites to the full Vertex URL. The client sends just the
+Google SA token and rewrites to the full GEAP URL. The client sends just the
 bare engine id (Apigee's target holds project/location).
 
 ## HTTP surface (BFF)
