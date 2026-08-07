@@ -24,7 +24,7 @@ tracing.setup_logging()
 logger = logging.getLogger("bff")
 
 HERE = Path(__file__).parent
-app = FastAPI(title="Apigee LLM + Agent Frontend")
+app = FastAPI(title="Commerce Agent Console")
 
 
 @app.middleware("http")
