@@ -37,11 +37,11 @@ converge.
   Apigee custom reports (auto-provisioned), and minutes-fresh platform metrics
   in Cloud Monitoring.
 
-![Trace Explorer replaying one transaction across the three projects](docs/img/trace-explorer.png)
+![Trace Explorer replaying one transaction across the three projects](docs/img/trace-explorer.gif)
 
 | | |
 |---|---|
-| ![Agent view: live A2A delegation](docs/img/agent-view.png) | ![Direct view: Gemini + Claude behind one gateway](docs/img/direct-view.png) |
+| ![Agent view: live A2A delegation](docs/img/agent-view.png) | ![Direct view: Gemini + Claude behind one gateway](docs/img/direct-view.gif) |
 | ![Cloud Monitoring: minutes-fresh platform metrics](docs/img/monitoring-dashboard.png) | ![Apigee custom reports: tokens by model and user](docs/img/apigee-reports.png) |
 
 ## Architecture at a glance
@@ -61,6 +61,11 @@ Three projects, one concern each: the **AI project** runs the agents and the
 UI, the **Apigee project** governs, the **backend project** holds the business
 system. Full topology, request lifecycles, security model and the rationale
 behind every choice: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+
+And the complete wiring — every VPC, subnet, PSC leg, engine NIC and proxy,
+including the Google-managed tenant projects most diagrams omit:
+
+![Detailed architecture: three projects plus tenant projects, both PSC chains, DNS peering, and every proxy](docs/img/architecture.svg)
 
 ## The stack — what each component does and why it earns its place
 

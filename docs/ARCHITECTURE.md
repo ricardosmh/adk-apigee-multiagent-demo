@@ -22,6 +22,14 @@ This doc owns the *what and why*. The build sequence lives in
 
 ## Topology
 
+The full detailed wiring — all three projects plus the Google-managed tenant
+projects, both PSC chains (northbound into Apigee, southbound to the backend),
+the engines' dual NICs, DNS peering, and every proxy:
+
+![Detailed architecture diagram](img/architecture.svg)
+
+The simplified logical view:
+
 ```mermaid
 flowchart TB
     Browser([Browser])

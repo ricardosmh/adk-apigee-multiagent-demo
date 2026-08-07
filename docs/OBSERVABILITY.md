@@ -471,7 +471,9 @@ model, tokens by user (the per-user FinOps cut Monitoring can't do), tokens by
 app (agent vs direct), model traffic over time, latency + errors by proxy. View
 them in the Apigee console → **Analytics → Custom Reports** (pick environment +
 time window → Run). This is the only surface that can break down by
-high-cardinality **user** email. ⚠️ It needs the org's **Analytics add-on**
+high-cardinality **user** email.
+
+![Apigee Analytics: token consumption per agent app on the model proxy](img/apigee-reports-by-agent.png) ⚠️ It needs the org's **Analytics add-on**
 enabled — definitions create fine without it, but render no data (the tool
 reports this as a finding; enabling is a manual, billing-affecting org step).
 
