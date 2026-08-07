@@ -13,18 +13,18 @@
 # parsed as single tokens). apigee_env and the regions below are examples:
 # set them to YOUR Apigee environment name and regions.
 projects:
-  apigee: rick-apigeex          # Apigee X org (org name == project id)
-  ai: rick-ai-services          # agents + BFF + single-pane telemetry
-  backend: rick-backend-services        # e-commerce services + Cloud SQL
+  apigee: your-apigee-project-id          # Apigee X org (org name == project id)
+  ai: your-ai-project-id                  # agents + BFF + single-pane telemetry
+  backend: your-backend-project-id        # e-commerce services + Cloud SQL
 
-apigee_env: sandbox-internal     # the ONE Apigee environment
+apigee_env: your-apigee-env-name          # the ONE Apigee environment
 
 identity:
   # YOU — the Google account you'll sign in with. Becomes the IAP member on
   # the BFF, the seed ACL admin, the Apigee developer owning the agent apps,
   # and the first Direct-view end user. Additional users are added in the
   # manifests (iap_members / endUsers.emails) or day-2 via the BFF admin view.
-  admin_email: admin@ricardosm.altostrat.com
+  admin_email: your-admin-email@example.com
 
 regions:
   ai: us-central1                         # Agent Engine + Firestore + registry
