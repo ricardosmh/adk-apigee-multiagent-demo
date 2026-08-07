@@ -4,7 +4,7 @@
   <Properties/>
   <AssignVariable>
     <Name>dynamic_model</Name>
-    <Value>claude-sonnet-4-6</Value>
+    <Value>claude-sonnet-5</Value>
     <!-- This is model value -->
   </AssignVariable>
   <IgnoreUnresolvedVariables>false</IgnoreUnresolvedVariables>

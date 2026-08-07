@@ -38,7 +38,7 @@ MODEL_MATRIX = {
     ("gemini", "low"): "gemini-3.1-flash-lite",
     ("gemini", "high"): "gemini-3.1-pro-preview",
     ("anthropic", "low"): "claude-haiku-4-5",
-    ("anthropic", "high"): "claude-sonnet-4-6",
+    ("anthropic", "high"): "claude-sonnet-5",
 }
 DEFAULT_PUBLISHER = "gemini"
 DEFAULT_COMPLEXITY = "low"

@@ -36,7 +36,7 @@
       <Response/>
       <Condition>(request.header.complexity = "low") and (request.verb = "POST")</Condition>
     </Flow>
-    <Flow name="claude-sonnet-4-6">
+    <Flow name="claude-sonnet-5">
       <Description/>
       <Request>
         <Step>
