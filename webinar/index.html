@@ -1,0 +1,855 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Governing Enterprise Multi-Agent Systems on Google Cloud</title>
+  <meta name="description" content="A Replicable Reference Architecture with Vertex AI, Apigee, and Private Service Connect">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+  <link rel="stylesheet" href="css/reveal.css">
+  <link rel="stylesheet" href="css/theme/black.css" id="theme">
+
+  <style>
+    :root {
+      --gcp-bg: #0d1117;
+      --gcp-card-bg: #161b22;
+      --gcp-card-border: #30363d;
+      --gcp-blue: #58a6ff;
+      --gcp-accent-apigee: #f59e0b; /* Deck-wide amber for Apigee / Governance */
+      --gcp-green: #3fb950;
+      --gcp-red: #f85149;
+      --gcp-text: #f0f6fc;
+      --gcp-muted: #8b949e;
+      --gcp-faint: #484f58;
+    }
+
+    .reveal {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--gcp-bg);
+      color: var(--gcp-text);
+    }
+
+    .reveal h1, .reveal h2, .reveal h3, .reveal h4 {
+      color: var(--gcp-text);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      text-transform: none;
+    }
+
+    .reveal h2 {
+      font-size: 2.1rem;
+      line-height: 1.25;
+      margin-bottom: 1.2rem;
+    }
+
+    .reveal .slide-number {
+      font-size: 0.9rem;
+      color: var(--gcp-muted);
+      right: 1.5rem;
+      bottom: 1.5rem;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 0.25rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.75rem;
+    }
+    .badge-blue { background: rgba(88, 166, 255, 0.15); color: var(--gcp-blue); border: 1px solid rgba(88, 166, 255, 0.3); }
+    .badge-amber { background: rgba(245, 158, 11, 0.15); color: var(--gcp-accent-apigee); border: 1px solid rgba(245, 158, 11, 0.3); }
+    .badge-red { background: rgba(248, 81, 73, 0.15); color: var(--gcp-red); border: 1px solid rgba(248, 81, 73, 0.3); }
+    .badge-green { background: rgba(63, 185, 80, 0.15); color: var(--gcp-green); border: 1px solid rgba(63, 185, 80, 0.3); }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      align-items: stretch;
+      text-align: left;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 1.2rem;
+      align-items: stretch;
+      text-align: left;
+    }
+
+    .grid-4 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr 1fr;
+      gap: 1rem;
+      align-items: stretch;
+      text-align: left;
+    }
+
+    .card {
+      background: var(--gcp-card-bg);
+      border: 1px solid var(--gcp-card-border);
+      border-radius: 0.75rem;
+      padding: 1.4rem;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      font-size: 1rem;
+      line-height: 1.5;
+    }
+
+    .card-highlight {
+      border-color: var(--gcp-accent-apigee);
+      background: rgba(245, 158, 11, 0.05);
+    }
+
+    .card h3, .card h4 {
+      font-size: 1.25rem;
+      margin-top: 0;
+      margin-bottom: 0.6rem;
+    }
+
+    .card p, .card ul {
+      margin: 0;
+      color: #c9d1d9;
+      font-size: 0.95rem;
+    }
+
+    .card ul {
+      padding-left: 1.2rem;
+    }
+
+    .card li {
+      margin-bottom: 0.4rem;
+    }
+
+    .table-container {
+      width: 100%;
+      overflow-x: auto;
+    }
+
+    table.styled-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.95rem;
+      text-align: left;
+      background: var(--gcp-card-bg);
+      border-radius: 0.5rem;
+      overflow: hidden;
+      border: 1px solid var(--gcp-card-border);
+    }
+
+    table.styled-table th {
+      background: #21262d;
+      color: var(--gcp-text);
+      padding: 0.8rem 1rem;
+      border-bottom: 1px solid var(--gcp-card-border);
+      font-weight: 600;
+    }
+
+    table.styled-table td {
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid var(--gcp-card-border);
+      color: #c9d1d9;
+    }
+
+    table.styled-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .img-frame {
+      border: 1px solid var(--gcp-card-border);
+      border-radius: 0.75rem;
+      overflow: hidden;
+      background: #000;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+    }
+
+    .img-frame img {
+      max-height: 520px;
+      width: auto;
+      max-width: 100%;
+      display: block;
+      margin: 0 auto;
+    }
+
+    .caption {
+      font-size: 0.85rem;
+      color: var(--gcp-muted);
+      margin-top: 0.6rem;
+      text-align: center;
+    }
+
+    .pivot-slide {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 80%;
+      text-align: center;
+    }
+
+    .pivot-text {
+      font-size: 2.8rem !important;
+      line-height: 1.35 !important;
+      color: #ffffff !important;
+      font-weight: 700;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .demo-badge {
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      color: #000;
+      font-weight: 800;
+      padding: 0.4rem 1rem;
+      border-radius: 9999px;
+      font-size: 1rem;
+      display: inline-block;
+      margin-bottom: 1rem;
+      box-shadow: 0 0 15px rgba(245, 158, 11, 0.4);
+    }
+
+    .mermaid {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 0.75rem;
+      padding: 1rem;
+      font-size: 0.85rem;
+    }
+
+    .accent-apigee { color: var(--gcp-accent-apigee); }
+    .accent-blue { color: var(--gcp-blue); }
+    .accent-green { color: var(--gcp-green); }
+    .accent-red { color: var(--gcp-red); }
+  </style>
+</head>
+<body>
+  <div class="reveal">
+    <div class="slides">
+
+      <!-- SLIDE 1: Cover -->
+      <section data-state="cover">
+        <div style="text-align: center; padding: 2rem 0;">
+          <div class="badge badge-blue">Google Cloud Architecture Webinar</div>
+          <h1 style="font-size: 2.8rem; margin: 1rem 0; line-height: 1.2;">Governing Enterprise Multi-Agent Systems on Google Cloud</h1>
+          <p style="font-size: 1.3rem; color: var(--gcp-muted); max-width: 900px; margin: 0 auto 2rem;">
+            A Replicable Reference Architecture with Vertex AI Agent Engine, A2A Protocol, and Apigee X
+          </p>
+          <div style="display: flex; justify-content: center; gap: 2rem; color: var(--gcp-muted); font-size: 0.95rem;">
+            <span><strong>Repository:</strong> adk-demos</span>
+            <span><strong>Target:</strong> 35–40 min talk + live demo</span>
+            <span><strong>License:</strong> Apache 2.0</span>
+          </div>
+        </div>
+        <aside class="notes">
+          Welcome, everyone. Today we are going to look at what it actually takes to run a multi-agent AI system in production on Google Cloud. Most demos you see in the AI space are built inside a single project, running on a developer's desktop, using personal API keys and direct internet connections. That is great for prototyping, but it is not how enterprise software works. In the real world, you have strict network boundaries, identity requirements, token budgets, and audit mandates. What we are presenting today is not a toy or an idealized conceptual diagram. It is a complete, working reference implementation that spans three separate Google Cloud projects, governs every single model and tool interaction through Apigee, traces every hop from browser to database with a single correlation ID, and can be rebuilt from scratch with a single set of declarative manifests. Let's dive in.
+        </aside>
+      </section>
+
+      <!-- SLIDE 2: Situation 1 -->
+      <section>
+        <div class="badge badge-blue">Situation</div>
+        <h2>Single-model chatbots are evolving into coordinated multi-agent networks</h2>
+        <div class="grid-3" style="margin-top: 2rem;">
+          <div class="card">
+            <h3 class="accent-blue">1. Workflow Decomposition</h3>
+            <p>Moving from monolithic, single-prompt chatbots to <strong>supervisor agents</strong> that orchestrate domain specialists.</p>
+          </div>
+          <div class="card">
+            <h3 class="accent-blue">2. Autonomous Action</h3>
+            <p>Specialists interact directly with business systems through the <strong>Model Context Protocol (MCP)</strong> and REST APIs.</p>
+          </div>
+          <div class="card">
+            <h3 class="accent-blue">3. Distributed Operations</h3>
+            <p>Transactions span multiple microservices, relational databases, and distinct operational boundaries.</p>
+          </div>
+        </div>
+        <aside class="notes">
+          Over the past two years, enterprise AI has moved through its first phase, which was mostly chatbots and single-prompt assistants. Today, organizations are building multi-agent systems where a coordinator or supervisor agent delegates specialized tasks to domain-specific agents—like an order specialist, a customer profile specialist, or a product catalog specialist. These agents don't just generate text; they interact directly with real-world databases and microservices through the Model Context Protocol. But as soon as you connect autonomous agents to production line-of-business systems, the architecture changes completely. You are no longer managing a simple request-response API. You are orchestrating a distributed system of semi-autonomous entities that negotiate tasks, execute transactions, and consume expensive LLM tokens at high velocity.
+        </aside>
+      </section>
+
+      <!-- SLIDE 3: Situation 2 -->
+      <section>
+        <div class="badge badge-blue">Situation</div>
+        <h2>Google Cloud provides the core building blocks for enterprise multi-agent architectures</h2>
+        <div class="grid-4" style="margin-top: 1.8rem;">
+          <div class="card">
+            <h4 class="accent-blue">Agent Engine</h4>
+            <p style="font-size: 0.9rem;">Managed Vertex AI Reasoning Engines running ADK agents with built-in scaling.</p>
+          </div>
+          <div class="card">
+            <h4 class="accent-blue">A2A Protocol</h4>
+            <p style="font-size: 0.9rem;">Standardized protocol for agent discovery, skill cards, and token streaming.</p>
+          </div>
+          <div class="card">
+            <h4 class="accent-apigee">Apigee X</h4>
+            <p style="font-size: 0.9rem;">Enterprise gateway for token quotas, developer keys, and policy enforcement.</p>
+          </div>
+          <div class="card">
+            <h4 class="accent-green">Cloud Run & SQL</h4>
+            <p style="font-size: 0.9rem;">Serverless compute and managed MySQL connected privately via PSC.</p>
+          </div>
+        </div>
+        <aside class="notes">
+          The good news is that we don't need to invent new foundational infrastructure to run these systems. Google Cloud already provides the core primitives we need. Vertex AI Agent Engine gives us a fully managed serverless runtime for reasoning engines, built on the Agent Development Kit. The Agent-to-Agent, or A2A, protocol gives us a standardized communication and capability negotiation standard between supervisor and sub-agents. Cloud Run and Cloud SQL provide scalable, secure compute and relational persistence for our business logic. And Apigee provides the enterprise API management layer that has governed mission-critical traffic for decades. The components are all mature and available today. The real challenge is not whether these individual pieces exist, but how to wire them together into a secure, governed, and operable production topology.
+        </aside>
+      </section>
+
+      <!-- SLIDE 4: Complication 1 -->
+      <section>
+        <div class="badge badge-red">Complication · Governance & Trust</div>
+        <h2>Unmanaged agent deployments create ungoverned model access and untracked token spend</h2>
+        <div class="grid-2" style="margin-top: 1.8rem;">
+          <div class="card">
+            <h3 class="accent-red">Shadow LLMs & Broad Credentials</h3>
+            <ul>
+              <li>Agents invoke foundational models directly using static service account keys.</li>
+              <li>No per-user identity enforcement at the model perimeter.</li>
+              <li>No capability to revoke access for one user without breaking the entire agent.</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3 class="accent-red">Zero Cost Attribution</h3>
+            <ul>
+              <li>Cannot answer: <em>"Who spent the tokens, on which model, through which agent?"</em></li>
+              <li>Token consumption is unmetered until the monthly cloud invoice arrives.</li>
+              <li>Answering basic billing questions requires building custom log pipelines.</li>
+            </ul>
+          </div>
+        </div>
+        <aside class="notes">
+          When teams rush an agent proof-of-concept into production, the first wall they hit is governance and financial control. In typical setups, agents call Vertex AI or third-party models directly using broad service account credentials or static API keys embedded in environment variables. There is no per-user identity check at the model boundary, no concept of token quotas, and no way to revoke access for a single user without breaking the entire agent. When the monthly cloud bill arrives, nobody can answer basic accounting questions: Who spent fifty thousand dollars on Gemini 1.5 Pro this week? Which agent generated those tokens? Was it the order specialist or the supervisor? Without an intermediary governance gateway, answering these questions requires building and maintaining an expensive custom data pipeline just to parse and correlate raw infrastructure logs.
+        </aside>
+      </section>
+
+      <!-- SLIDE 5: Complication 2 -->
+      <section>
+        <div class="badge badge-red">Complication · Governance & Trust</div>
+        <h2>Multi-hop agent delegations turn production transactions into opaque black boxes</h2>
+        <div class="card" style="margin-top: 1.5rem; text-align: center;">
+          <div style="font-family: monospace; font-size: 1.1rem; color: #58a6ff; margin-bottom: 1rem;">
+            Browser ➔ BFF ➔ Supervisor ➔ Specialist ➔ MCP Gateway ➔ Cloud Run ➔ Cloud SQL
+          </div>
+          <p style="color: #f85149; font-weight: 600;">Where did the 12-second latency spike or 500 error actually occur?</p>
+        </div>
+        <div class="grid-3" style="margin-top: 1.2rem;">
+          <div class="card">
+            <h4>Disparate Silos</h4>
+            <p>Logs scattered across multiple GCP projects and service boundaries.</p>
+          </div>
+          <div class="card">
+            <h4>No Shared Clock</h4>
+            <p>Timing metrics formatted differently with inconsistent epoch precision.</p>
+          </div>
+          <div class="card">
+            <h4>Broken Trace Context</h4>
+            <p>Traceparent lost during A2A handoffs or MCP tool invocations.</p>
+          </div>
+        </div>
+        <aside class="notes">
+          The second major operational blocker is opacity. In a multi-agent architecture, a single user query might trigger a cascade of operations: the supervisor inspects the prompt, calls a model, delegates over A2A to the order agent, which calls another model, invokes an MCP tool, which hits an internal microservice, which executes a SQL query on a database. If that request takes twelve seconds to complete, or fails with a 500 error, where did the breakdown happen? Was it model latency, a slow database query, a networking timeout, or agent orchestration overhead? In standard architectures, these logs are scattered across different services and different projects with completely different formats and no common correlation identifier. Debugging a failed transaction feels like searching for a needle in four separate haystacks.
+        </aside>
+      </section>
+
+      <!-- SLIDE 6: Complication 3 -->
+      <section>
+        <div class="badge badge-red">Complication · Security Reality</div>
+        <h2>Standard agent prototypes introduce critical identity, network, and database vulnerabilities</h2>
+        <div class="grid-2" style="margin-top: 1.5rem;">
+          <div class="card">
+            <h4 class="accent-red">Spoofable Identity Headers</h4>
+            <p>Prototypes trust raw incoming HTTP headers (e.g. <code>X-User-Email</code>) instead of cryptographically verifying signed JWT tokens.</p>
+          </div>
+          <div class="card">
+            <h4 class="accent-red">God-Mode Service Accounts</h4>
+            <p>All agents share a single over-privileged service account with unrestricted cross-project access.</p>
+          </div>
+          <div class="card">
+            <h4 class="accent-red">Publicly Exposed Backends</h4>
+            <p>Internal microservices accept public traffic, relying solely on simple API keys at the perimeter.</p>
+          </div>
+          <div class="card">
+            <h4 class="accent-red">Static Database Secrets</h4>
+            <p>Database passwords passed in plaintext environment variables rather than using IAM database authentication.</p>
+          </div>
+        </div>
+        <aside class="notes">
+          From a security perspective, agent prototypes frequently make dangerous compromises to get things working. They trust spoofable identity headers like X-User-Email sent from the browser instead of cryptographically verifying signed JWT tokens. They give every agent a single shared service account with broad admin privileges instead of enforcing least privilege. They expose internal backend microservices directly to the public internet because cross-VPC networking feels too complex. And they embed database passwords directly into runtime environment variables. In an enterprise environment, any single one of these vulnerabilities is an immediate security block. An enterprise agent architecture must guarantee that backend services have zero public surface, identity is cryptographically proven, and credentials like database passwords do not exist at all.
+        </aside>
+      </section>
+
+      <!-- SLIDE 7: Complication 4 -->
+      <section>
+        <div class="badge badge-red">Complication · Engineering Reality</div>
+        <h2>Brittle agent coupling and unrepeatable environments stall production operations</h2>
+        <div class="grid-3" style="margin-top: 1.8rem;">
+          <div class="card">
+            <h3 class="accent-red">Brittle Coupling</h3>
+            <p>Vertex AI produces a new engine ID per deploy. Hardcoded IDs mean redeploying a specialist breaks the supervisor.</p>
+          </div>
+          <div class="card">
+            <h3 class="accent-red">Configuration Drift</h3>
+            <p>Manual console clicks and hardcoded project IDs cause builds to work in one project but fail in the next.</p>
+          </div>
+          <div class="card">
+            <h3 class="accent-red">Undocumented Edges</h3>
+            <p>A2A token streaming under ADK 2.3 and bidirectional Private Service Connect lack working production reference implementations.</p>
+          </div>
+        </div>
+        <aside class="notes">
+          Finally, there is the engineering reality of running these stacks day-to-day. In Vertex AI Agent Engine, every deployment produces a new engine resource ID. If your supervisor hardcodes the specialist's engine ID, redeploying a specialist instantly breaks your supervisor. Furthermore, setting up the necessary infrastructure—cross-project Private Service Connect, IAM database authentication, DNS peering, and API proxies—involves dozens of interdependent steps. When done manually through the Cloud Console, you get configuration drift, hardcoded project IDs in scripts, and environments that cannot be replicated. When you look for documentation on the hard problems—like streaming tokens through A2A under ADK 2.3 or handling bidirectional Private Service Connect between Apigee and Cloud Run—the standard documentation runs out. Teams spend months rediscovering solutions to these exact integration traps.
+        </aside>
+      </section>
+
+      <!-- SLIDE 8: The Question (Dark Pivot) -->
+      <section data-background="#05070a">
+        <div class="pivot-slide">
+          <div class="badge badge-amber" style="margin-bottom: 2rem;">The Core Architectural Question</div>
+          <p class="pivot-text">
+            “Can you build a multi-agent system where <span class="accent-apigee">EVERY</span> call—model, tool, agent, and business API—is governed, attributed, traced, and private… and the whole stack rebuilds from three empty projects?”
+          </p>
+        </div>
+        <aside class="notes">
+          This brings us to the central question of today's webinar: Can you build a multi-agent system where every single call—whether it is a model invocation, an MCP tool execution, an inter-agent delegation, or a backend business API request—is strictly governed, attributed to a verified user, traced under a single ID, and kept completely private… and where the entire multi-project infrastructure can be cleanly rebuilt from scratch using automated, declarative tools? The answer is yes. And for the rest of this session, we are going to walk through the exact architecture, code, and mechanisms of the reference implementation that proves it.
+        </aside>
+      </section>
+
+      <!-- SLIDE 9: Answer 1 (Topology) -->
+      <section>
+        <div class="badge badge-green">Architecture · Topology</div>
+        <h2>Three projects enforce strict separation of concerns across AI, governance, and data</h2>
+        <div class="grid-3" style="margin-top: 1.5rem;">
+          <div class="card" style="border-top: 4px solid #58a6ff;">
+            <h3 class="accent-blue">AI Project (ai)</h3>
+            <ul>
+              <li>4 Agent Engines (Supervisor + 3 Specialists)</li>
+              <li>BFF Cloud Run behind IAP</li>
+              <li>Firestore ACL & Secret Manager</li>
+              <li>Single-Pane Telemetry Sink</li>
+            </ul>
+          </div>
+          <div class="card card-highlight" style="border-top: 4px solid #f59e0b;">
+            <h3 class="accent-apigee">Apigee Project (gateway)</h3>
+            <ul>
+              <li>Apigee X Organization (7 Proxies)</li>
+              <li>API Products & Token Quotas</li>
+              <li>Per-User / Per-Agent Apps & Keys</li>
+              <li>Token Minting SAs (Access & ID tokens)</li>
+            </ul>
+          </div>
+          <div class="card" style="border-top: 4px solid #3fb950;">
+            <h3 class="accent-green">Backend Project (backend)</h3>
+            <ul>
+              <li>3 FastAPI Microservices (Cloud Run)</li>
+              <li>Cloud SQL MySQL (IAM DB Auth)</li>
+              <li>Regional Internal Load Balancer</li>
+              <li>PSC Service Attachment to Apigee</li>
+            </ul>
+          </div>
+        </div>
+        <aside class="notes">
+          Here is the architectural anchor of the entire system. We split the architecture across three distinct Google Cloud projects, each with a single, clear responsibility. In the Apigee project, we run the Apigee X organization. It is the governance plane: it holds the API proxies, defines token quota policies, and manages developer credentials. In the AI project, we run our four Agent Engines on Vertex AI, the FastAPI Backend-for-Frontend, our Firestore authorization database, and our centralized telemetry sink. In the Backend project, we host our core business system—three microservices and a Cloud SQL database behind an internal load balancer. The AI project has zero direct network connectivity to the backend project. Every single interaction between agents and backend services is forced to route through the Apigee governance gateway over private Google Cloud backbone networking.
+        </aside>
+      </section>
+
+      <!-- SLIDE 10: Answer 2 (Apigee Gateway) -->
+      <section>
+        <div class="badge badge-amber">Governance Plane</div>
+        <h2>Apigee acts as the single governance gateway across models, tools, and backend APIs</h2>
+        <div class="table-container" style="margin-top: 1.2rem;">
+          <table class="styled-table">
+            <thead>
+              <tr>
+                <th>Base Path</th>
+                <th>Fronts</th>
+                <th>Caller Credential</th>
+                <th>Upstream Credential (Minted by Apigee)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>/ai-agents</code></td>
+                <td>Supervisor Engine</td>
+                <td>BFF <code>x-api-key</code></td>
+                <td><code>GoogleAccessToken</code> (AI Deploy SA)</td>
+              </tr>
+              <tr>
+                <td><code>/aiplatform</code></td>
+                <td>Model Calls from Agents</td>
+                <td>Agent <code>x-api-key</code></td>
+                <td><code>GoogleAccessToken</code> (AI Deploy SA)</td>
+              </tr>
+              <tr>
+                <td><code>/llm-stream</code></td>
+                <td>Direct Model Chat (Gemini & Claude)</td>
+                <td>End User Personal <code>x-api-key</code></td>
+                <td><code>GoogleAccessToken</code> (AI Deploy SA)</td>
+              </tr>
+              <tr>
+                <td><code>/mcp</code></td>
+                <td>MCP Tool Catalog & Execution</td>
+                <td>Specialist <code>x-api-key</code></td>
+                <td>Internal Private MCP Routing</td>
+              </tr>
+              <tr>
+                <td><code>/*-management</code></td>
+                <td>E-Commerce Services (Customers/Orders/Products)</td>
+                <td>MCP Server</td>
+                <td><code>GoogleIDToken</code> (Dedicated Invoker SA)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <aside class="notes">
+          Let's examine how Apigee functions as the central nervous system of this architecture. We deploy seven dedicated API proxy bundles. The `/ai-agents` proxy fronts the supervisor engine, translating external client queries into authenticated Vertex AI Reasoning Engine requests. The `/aiplatform` proxy fronts all model calls originating from the agents. The `/llm-stream` proxy provides a unified SSE streaming endpoint for direct user-to-model chat, routing requests dynamically to either Google Gemini or Anthropic Claude while applying identical security and quota policies to both. The `/mcp` proxy provides a managed gateway for tool discovery and execution. And the three e-commerce management proxies front the backend microservices, minting short-lived Google ID tokens to authenticate across the private internal load balancer. Every data path is governed in one place.
+        </aside>
+      </section>
+
+      <!-- SLIDE 11: Answer 3 (Per-User Governance) -->
+      <section>
+        <div class="badge badge-amber">Governance Plane</div>
+        <h2>Per-user API keys bound to IAP identities enforce token quotas before model execution</h2>
+        <div class="grid-3" style="margin-top: 1.8rem;">
+          <div class="card">
+            <h3 class="accent-apigee">Key-to-Identity Binding</h3>
+            <p><code>VerifyAPIKey</code> validates that the key's <code>owner_email</code> matches the verified IAP email. Stolen keys are immediately rejected with 403.</p>
+          </div>
+          <div class="card">
+            <h3 class="accent-apigee">Edge Token Quotas</h3>
+            <p><code>LLMTokenQuota</code> enforces rate limits <em>before</em> model invocation: <strong>100k tokens/hour</strong> per agent, <strong>10k tokens/5min</strong> per user.</p>
+          </div>
+          <div class="card">
+            <h3 class="accent-apigee">Dual-Publisher Support</h3>
+            <p>Gemini and Claude routed seamlessly behind the same gateway endpoint, governed under identical security and budgeting rules.</p>
+          </div>
+        </div>
+        <aside class="notes">
+          Here is how we solve the ungoverned access problem. When a user interacts with the system, they provide their personal API key. When that request hits Apigee, the gateway does not just check if the key is valid. It verifies that the `owner_email` metadata attached to the key matches the cryptographically verified user identity passed from IAP. If someone steals your API key, they cannot use it because their authenticated email will not match the key's owner. Furthermore, Apigee enforces native LLM token quotas at the edge before the request ever reaches Vertex AI. We enforce a 100k token-per-hour quota on agent applications and a 10k token-per-5-minute quota on individual users. If a rogue agent loops or a user exceeds their quota, Apigee rejects the call at the edge, protecting both your budget and your backend.
+        </aside>
+      </section>
+
+      <!-- SLIDE 12: Answer 4 (Domain Specialists) -->
+      <section>
+        <div class="badge badge-blue">AI Plane · Agents</div>
+        <h2>Domain specialists encapsulate scoped MCP toolsets under least-privilege service accounts</h2>
+        <div class="grid-3" style="margin-top: 1.8rem;">
+          <div class="card">
+            <h3 class="accent-blue">order_agent</h3>
+            <p><strong>Identity:</strong> <code>a2a-order-sa</code></p>
+            <p><strong>Tools:</strong> 6 scoped MCP tools (<code>listOrders</code>, <code>createOrder</code>, <code>getOrderById</code>, etc.)</p>
+            <p><strong>Secret:</strong> <code>apigee-key-order</code></p>
+          </div>
+          <div class="card">
+            <h3 class="accent-blue">product_agent</h3>
+            <p><strong>Identity:</strong> <code>a2a-product-sa</code></p>
+            <p><strong>Tools:</strong> Scoped catalog search, product detail, and inventory queries.</p>
+            <p><strong>Secret:</strong> <code>apigee-key-product</code></p>
+          </div>
+          <div class="card">
+            <h3 class="accent-blue">customer_agent</h3>
+            <p><strong>Identity:</strong> <code>a2a-customer-sa</code></p>
+            <p><strong>Tools:</strong> Scoped account lookup, address verification, and profile management.</p>
+            <p><strong>Secret:</strong> <code>apigee-key-customer</code></p>
+          </div>
+        </div>
+        <aside class="notes">
+          Rather than building a single monolithic agent with dozens of tools, we divide domain capabilities into three specialized agents: `order_agent`, `product_agent`, and `customer_agent`. Each specialist runs as an independent Reasoning Engine in Vertex AI, operates under its own dedicated service account, and holds its own unique Apigee API key stored securely in Secret Manager. Crucially, each specialist is provisioned with only the subset of MCP tools required for its domain. The order agent cannot see customer account tools, and the product agent cannot execute order modifications. By keeping each agent's tool surface small and focused, we eliminate tool selection ambiguity for the LLM and enforce least-privilege security boundaries at the agent level.
+        </aside>
+      </section>
+
+      <!-- SLIDE 13: Answer 5 (A2A & Self-Heal) -->
+      <section>
+        <div class="badge badge-blue">AI Plane · Agents</div>
+        <h2>The supervisor coordinates over A2A with token streaming and dynamic self-healing discovery</h2>
+        <div class="grid-2" style="margin-top: 1.8rem;">
+          <div class="card">
+            <h3 class="accent-blue">A2A Token Streaming (ADK 2.3)</h3>
+            <ul>
+              <li><code>RemoteA2aAgent</code> proxies with streaming client factory.</li>
+              <li>Tokens stream in real time as specialists generate them.</li>
+              <li>UI reveals delegation the instant <code>transfer_to_agent</code> emits.</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3 class="accent-blue">Registry Self-Healing (~60s TTL)</h3>
+            <ul>
+              <li>Specialists auto-register in Agent Registry upon deployment.</li>
+              <li>Supervisor refreshes cache every 60s via <code>before_agent_callback</code>.</li>
+              <li>Specialists redeploy cleanly with <strong>zero supervisor redeployments</strong>.</li>
+            </ul>
+          </div>
+        </div>
+        <aside class="notes">
+          Inter-agent communication is built on Google's Agent-to-Agent protocol. The supervisor connects to specialists using streaming `RemoteA2aAgent` proxies under ADK 2.3. As the specialist generates tokens, they stream immediately back through the supervisor to the frontend, revealing delegations the instant they occur. Even more importantly, we solved the brittle engine coupling problem through dynamic registry self-healing. When a specialist is redeployed, Vertex AI registers the new engine in Agent Registry. In the supervisor, a lightweight `before_agent_callback` inspects the registry on a 60-second TTL cache. When it detects a new generation of a specialist, it updates the in-memory proxy URL on the fly. You can redeploy specialists continuously throughout the day without ever restarting or redeploying the supervisor.
+        </aside>
+      </section>
+
+      <!-- SLIDE 14: Answer 6 (Fail-Closed ACL) -->
+      <section>
+        <div class="badge badge-blue">AI Plane · Security</div>
+        <h2>Dynamic, Firestore-backed ACLs enforce fail-closed authorization per conversation turn</h2>
+        <div class="grid-3" style="margin-top: 1.8rem;">
+          <div class="card">
+            <h3 class="accent-blue">Turn-Level Evaluation</h3>
+            <p>Evaluated on every query in <code>before_agent_callback</code> using the verified IAP identity. Instant permission revocation.</p>
+          </div>
+          <div class="card">
+            <h3 class="accent-blue">Fail-Closed Safety Net</h3>
+            <p>Missing user record = zero agent access. <code>before_tool_callback</code> provides an unbypassable execution barrier.</p>
+          </div>
+          <div class="card">
+            <h3 class="accent-blue">Live UI Administration</h3>
+            <p>Administrators manage roles and user-agent bindings directly in the Admin UI without modifying code or redeploying.</p>
+          </div>
+        </div>
+        <aside class="notes">
+          To control who can use which agents, we implemented a dynamic, fail-closed access control system backed by Firestore. On every single conversation turn, the supervisor extracts the verified user email from the invocation context and queries Firestore for that user's authorized agent list. If an employee is only permitted to access the product catalog, the supervisor dynamically removes the order and customer specialists from its available sub-agents for that request. If no record exists for a user, the system fails closed and denies all agent delegations. As an additional layer of defense, a `before_tool_callback` acts as a hard block if a restricted agent is somehow invoked. Administrators can update permissions in real time through the web UI, taking effect instantly on the very next turn.
+        </aside>
+      </section>
+
+      <!-- SLIDE 15: Answer 7 (Zero-Trust Security & Network) -->
+      <section>
+        <div class="badge badge-green">Security & Networking</div>
+        <h2>The entire data path is private by construction with Private Service Connect and IAM database auth</h2>
+        <div class="grid-2" style="margin-top: 1.5rem;">
+          <div class="card">
+            <h4 class="accent-green">Verified IAP Identity</h4>
+            <p>Cloud Run BFF verifies cryptographic signature of <code>X-Goog-IAP-JWT-Assertion</code>. Spoofable plaintext headers are ignored.</p>
+          </div>
+          <div class="card">
+            <h4 class="accent-green">Bidirectional PSC</h4>
+            <p>Northbound (AI ➔ Apigee) and Southbound (Apigee ➔ Backend) cross-project traffic routes strictly over Google private backbone.</p>
+          </div>
+          <div class="card">
+            <h4 class="accent-green">IAM-Only Services</h4>
+            <p>Backend Cloud Run services require Google ID token authentication; only Apigee's dedicated invoker SA is authorized.</p>
+          </div>
+          <div class="card">
+            <h4 class="accent-green">Passwordless Cloud SQL</h4>
+            <p>Cloud SQL MySQL uses IAM database auth. The runtime service account <code>ecommerce-sa</code> IS the database user. Zero DB passwords.</p>
+          </div>
+        </div>
+        <aside class="notes">
+          Security in this demo is enforced at the network and identity layers simultaneously. At the edge, Cloud Run sits behind Identity-Aware Proxy. The BFF verifies the cryptographic signature and audience of the `X-Goog-IAP-JWT-Assertion` header, completely ignoring untrusted headers. Across project boundaries, all traffic flows over Google's private backbone via Private Service Connect in both directions. The backend microservices on Cloud Run are configured with IAM authentication, accepting traffic only from Apigee's dedicated invoker service account. And at the data layer, Cloud SQL uses Cloud SQL IAM Database Authentication. The runtime service account `ecommerce-sa` is itself the MySQL user. There are no database passwords stored in code, configuration, or environment variables anywhere in the entire stack.
+        </aside>
+      </section>
+
+      <!-- SLIDE 16: Answer 8 (Observability) -->
+      <section>
+        <div class="badge badge-blue">Observability · Logging</div>
+        <h2>A single traceparent correlates every hop from browser to database across four named logs</h2>
+        <div class="table-container" style="margin-top: 1.2rem;">
+          <table class="styled-table">
+            <thead>
+              <tr>
+                <th>Log Name</th>
+                <th>Written By</th>
+                <th>One Entry Per</th>
+                <th>Key Telemetry Fields</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>front-ai-logs</code></td>
+                <td>BFF Cloud Run</td>
+                <td>UI Turn</td>
+                <td><code>user</code>, <code>view</code>, <code>userMessage</code>, <code>latency_metrics</code>, <code>error</code></td>
+              </tr>
+              <tr>
+                <td><code>agent-ai-logs</code></td>
+                <td>Agent Engines</td>
+                <td>Engine Record</td>
+                <td><code>engine</code>, <code>agent</code>, <code>session_id</code>, <code>model_call</code> tokens, <code>tool_call</code></td>
+              </tr>
+              <tr>
+                <td><code>apigee-ai-logs</code></td>
+                <td>7 Apigee Proxies</td>
+                <td>Gateway Hit</td>
+                <td><code>user</code>, <code>app</code>, <code>model</code>, <code>promptTokens</code>, <code>quotaRemaining</code>, 4 timestamps</td>
+              </tr>
+              <tr>
+                <td><code>services-ai-logs</code></td>
+                <td>Microservices</td>
+                <td>HTTP Request</td>
+                <td><code>service</code>, <code>verb</code>, <code>path</code>, <code>status</code>, <code>latencyMs</code></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="caption">All logs reside in the AI project on a single canonical schema: <code>event</code>, <code>component</code>, <code>traceparent</code>, <code>latency_metrics</code>.</p>
+        <aside class="notes">
+          To solve the multi-agent opacity challenge, we established end-to-end W3C distributed tracing. When a user sends a message, the BFF mints a standard W3C `traceparent`. That header is passed downstream to Apigee, injected into Agent Engine sessions, forwarded across A2A metadata to specialists, transmitted to the MCP server, and delivered to the backend microservices. Every single component emits structured telemetry into one of four dedicated log streams in the AI project: `front-ai-logs`, `agent-ai-logs`, `apigee-ai-logs`, and `services-ai-logs`. Because all four logs adhere to a single canonical JSON schema with standardized latency metrics, filtering by a single trace ID in Cloud Logging reveals the exact, nanosecond-accurate timeline of a request across all three projects.
+        </aside>
+      </section>
+
+      <!-- SLIDE 17: Answer 9 (Trace Explorer Hero - Demo 1) -->
+      <section>
+        <div class="demo-badge">LIVE DEMO CUT-IN #1</div>
+        <h2>The Trace Explorer replays transactions with exact latency attribution across all three projects</h2>
+        <div class="img-frame">
+          <img src="img/trace-explorer.png" alt="Trace Explorer Replay and Waterfall">
+        </div>
+        <p class="caption">Reconstructed multi-agent transaction flow with packet replay, latency breakdown donut, and millisecond waterfall.</p>
+        <aside class="notes">
+          This brings us to our first live demo cut-in: the Trace Explorer built directly into the frontend. What you see on screen is not a static mockup; it is a real-time visualization generated entirely by reading back our four structured log streams from Cloud Logging. The UI reconstructs the entire transaction graph, showing an animated packet traversing from the browser, through IAP, across the Apigee gateway, into the supervisor, delegating to the order specialist, querying the MCP gateway, hitting Cloud Run, and executing on Cloud SQL. Below the network topology, a latency waterfall breaks down exactly where every millisecond was spent. Let's switch over to the live environment and inspect a multi-agent transaction in real time.
+        </aside>
+      </section>
+
+      <!-- SLIDE 18: Answer 10 (Token Analytics - Demo 2) -->
+      <section>
+        <div class="demo-badge">LIVE DEMO CUT-IN #2</div>
+        <h2>Edge Data Collectors deliver comprehensive token analytics and metrics without an ETL pipeline</h2>
+        <div class="grid-2" style="margin-top: 1rem;">
+          <div class="img-frame">
+            <img src="img/apigee-reports.png" alt="Apigee Custom Reports">
+            <p class="caption">Apigee Reports: Token counts by model & user.</p>
+          </div>
+          <div class="img-frame">
+            <img src="img/monitoring-dashboard.png" alt="Cloud Monitoring Dashboard">
+            <p class="caption">Cloud Monitoring: Live calls/min & p95 latency.</p>
+          </div>
+        </div>
+        <aside class="notes">
+          Our second demo cut-in addresses token and cost analytics. Traditionally, tracking token consumption per user, model, or agent requires exporting logs to BigQuery and running scheduled SQL pipelines. In this architecture, we capture token telemetry directly at the Apigee gateway using Apigee Data Collectors. Apigee parses the token usage from model responses and records it in real time. We provide an automated provisioning tool that builds Apigee Custom Reports showing input tokens, output tokens, and total cost sliced by model, developer app, and individual user. In parallel, log-based metrics feed a pre-configured Cloud Monitoring dashboard showing real-time transaction throughput and p95 latency. Let's look at the live dashboards to see per-user token metering in action.
+        </aside>
+      </section>
+
+      <!-- SLIDE 19: Answer 11 (Replicability & Tooling) -->
+      <section>
+        <div class="badge badge-green">Tooling & Replicability</div>
+        <h2>One environment file and three declarative manifests drive automated convergence</h2>
+        <div class="grid-2" style="margin-top: 1.2rem;">
+          <div class="card">
+            <h3 class="accent-green">Declarative State</h3>
+            <ul>
+              <li><code>demo-environment.yaml</code> (Single source of project IDs, regions, admin identity)</li>
+              <li><code>agents/runtime-manifest.yaml</code> (Agent infra, SAs, ACL seed)</li>
+              <li><code>apigee/provision/manifest.yaml</code> (Products, quotas, keys)</li>
+              <li><code>services/services-manifest.yaml</code> (VPC, Cloud SQL, ALB)</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3 class="accent-green">Consistent CLI Grammar</h3>
+            <table class="styled-table" style="font-size: 0.85rem; margin-top: 0.5rem;">
+              <tr><th>Command</th><th>Action</th></tr>
+              <tr><td><code>tool --check</code></td><td>Read-only drift report</td></tr>
+              <tr><td><code>tool --dry-run</code></td><td>Preview planned writes</td></tr>
+              <tr><td><code>tool</code> (bare)</td><td>Report ➔ interactive confirm</td></tr>
+              <tr><td><code>tool --apply</code></td><td>Non-interactive CI apply</td></tr>
+            </table>
+          </div>
+        </div>
+        <aside class="notes">
+          How do you ensure an architecture this sophisticated can be deployed reliably without human error? We built a declarative, manifest-driven tooling system. The entire deployment is parameterized by a single environment file, `demo-environment.yaml`, which specifies your project IDs, regions, and admin identity. Three version-controlled YAML manifests declare the desired state for the AI plane, the Apigee gateway, and the backend services. Seven core Python and shell tools converge the live cloud state to match the manifests. Every tool implements the exact same CLI grammar: `--check` inspects live state and outputs a drift report, `--dry-run` previews actions safely, bare execution prompts for interactive confirmation, and `--apply` executes non-interactive reconciliation for CI/CD pipelines.
+        </aside>
+      </section>
+
+      <!-- SLIDE 20: Answer 12 (Guardrails & Invariants) -->
+      <section>
+        <div class="badge badge-green">Tooling & Quality</div>
+        <h2>Automated guardrail tests fail the build on hardcoded IDs, documentation drift, and contract mismatches</h2>
+        <div class="grid-3" style="margin-top: 1.8rem;">
+          <div class="card">
+            <h3 class="accent-green">Zero Hardcoded IDs</h3>
+            <p><code>test_demo_env.py</code> and <code>test_docs_guard.py</code> scan all manifests and docs, failing if literal project IDs/numbers appear.</p>
+          </div>
+          <div class="card">
+            <h3 class="accent-green">Manifest Consistency</h3>
+            <p><code>test_manifest_consistency.py</code> validates cross-manifest contracts: SA names, secret accessors, audiences, and target servers.</p>
+          </div>
+          <div class="card">
+            <h3 class="accent-green">Offline CI Execution</h3>
+            <p>The entire <code>pytest tests/</code> suite runs in seconds without requiring active GCP credentials or live cloud connections.</p>
+          </div>
+        </div>
+        <aside class="notes">
+          To guarantee that this repository remains clean and replicable over time, we enforce automated guard tests in `pytest`. One suite scans every manifest, configuration file, and markdown document in the repository, instantly failing the build if a developer accidentally commits a hardcoded project ID, project number, or internal email. Another test suite cross-checks our manifests against each other, verifying that the service account created in the AI manifest matches the invoker permissions in the backend manifest and the proxy bundle audiences in the Apigee manifest. These tests run completely offline without needing GCP credentials, ensuring that configuration drift is caught before code ever reaches a deployment pipeline.
+        </aside>
+      </section>
+
+      <!-- SLIDE 21: Answer 13 (Reusable Patterns) -->
+      <section>
+        <div class="badge badge-blue">Key Takeaways</div>
+        <h2>Six production-proven patterns worth lifting directly into your own enterprise deployments</h2>
+        <div class="grid-2" style="margin-top: 1.2rem;">
+          <div class="card">
+            <p><strong>1. A2A Token Streaming under ADK 2.3:</strong> Working client-factory and SSE converter hooks.</p>
+          </div>
+          <div class="card">
+            <p><strong>2. Registry Self-Healing:</strong> Dynamic sub-agent discovery with zero supervisor redeployments.</p>
+          </div>
+          <div class="card">
+            <p><strong>3. Apigee as LLM Gateway:</strong> Per-user key binding, token quotas, and dual Gemini/Claude routing.</p>
+          </div>
+          <div class="card">
+            <p><strong>4. End-to-End Tracing:</strong> In-band W3C traceparent propagation from browser to database.</p>
+          </div>
+          <div class="card">
+            <p><strong>5. Check/Apply Provisioners:</strong> Converging, drift-detecting CLI tooling driven by declarative manifests.</p>
+          </div>
+          <div class="card">
+            <p><strong>6. Zero-ETL Token Analytics:</strong> Gateway Data Collectors feeding custom reports without data pipelines.</p>
+          </div>
+        </div>
+        <aside class="notes">
+          Even if you do not deploy this entire demo repository end-to-end, there are six production-grade architectural patterns you can immediately lift and adapt for your own Google Cloud projects. First, the exact client factory hooks required for streaming A2A sub-agents under ADK 2.3. Second, the runtime self-healing discovery pattern that decouples supervisors from specialist redeployments. Third, the Apigee proxy configurations for governing Gemini and Claude behind unified token quotas. Fourth, the end-to-end W3C trace propagation code that connects browser sessions to backend databases. Fifth, the idempotent check-apply manifest tooling model. And sixth, the zero-ETL token analytics pattern using gateway Data Collectors. Each pattern is fully documented, tested, and ready to be integrated into your production systems.
+        </aside>
+      </section>
+
+      <!-- SLIDE 22: Close & CTA -->
+      <section data-state="cover">
+        <div style="text-align: center; padding: 2rem 0;">
+          <div class="badge badge-green">Open Source Reference Implementation</div>
+          <h2 style="font-size: 2.6rem; margin: 1rem 0;">Enterprise agent governance is ready today</h2>
+          <p style="font-size: 1.25rem; color: #c9d1d9; max-width: 850px; margin: 0 auto 2rem;">
+            Deploy it across three fresh projects, inspect the implementation, and lift the patterns you need.
+          </p>
+          <div class="card" style="display: inline-block; text-align: left; padding: 1.5rem 2.5rem; margin-bottom: 1.5rem;">
+            <p style="margin-bottom: 0.5rem;"><strong>GitHub Repository:</strong> <code style="color: #58a6ff;">https://github.com/ricardosmh/adk-apigee-multiagent-demo</code></p>
+            <p style="margin-bottom: 0.5rem;"><strong>End-to-End Runbook:</strong> <code style="color: #3fb950;">docs/GETTING_STARTED.md</code> (Phases A–E)</p>
+            <p style="margin: 0;"><strong>License:</strong> Apache 2.0 Open Source</p>
+          </div>
+        </div>
+        <aside class="notes">
+          To conclude: running multi-agent AI systems in enterprise production does not require compromising on security, governance, or observability. By pairing Vertex AI Agent Engine and the A2A protocol with Apigee X and Private Service Connect, you can provide developers with the full flexibility of agentic AI while giving security and platform teams total control over identity, data privacy, and token budgets. Everything we covered today is open source under the Apache 2.0 license in the repository linked on screen. The end-to-end runbook in `docs/GETTING_STARTED.md` will walk you through deploying the complete stack across three fresh projects in just a few hours. Clone it, deploy it, take it apart, and lift the patterns into your own architecture. Thank you, and I am happy to open the floor to questions.
+        </aside>
+      </section>
+
+    </div>
+  </div>
+
+  <script src="js/reveal.js"></script>
+  <script src="plugin/notes/notes.js"></script>
+  <script src="js/mermaid.min.js"></script>
+  <script>
+    Reveal.initialize({
+      hash: true,
+      slideNumber: 'c/t',
+      showSlideNumber: 'all',
+      transition: 'fade',
+      transitionSpeed: 'fast',
+      width: 1920,
+      height: 1080,
+      margin: 0.04,
+      plugins: [ RevealNotes ]
+    });
+
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: 'dark',
+      themeVariables: {
+        darkMode: true,
+        background: '#161b22',
+        primaryColor: '#58a6ff',
+        primaryTextColor: '#f0f6fc',
+        primaryBorderColor: '#30363d',
+        lineColor: '#8b949e',
+        secondaryColor: '#f59e0b',
+        tertiaryColor: '#3fb950'
+      }
+    });
+  </script>
+</body>
+</html>
