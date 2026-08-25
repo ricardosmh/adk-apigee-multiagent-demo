@@ -49,3 +49,12 @@ This zip is a full replacement for the `webinar/` directory of
   ADK, A2A, Apigee, Cloud Run, Cloud SQL.
 - The deck canvas now sits below the SCQA rail, so no slide content can
   render underneath it.
+
+## v3: Multi-language
+
+- `index.html` (EN) · `index-es.html` (Español) · `index-pt.html` (Português BR)
+- Flag switcher pinned top-right on every slide; switching keeps the current
+  slide (the `#/N` hash carries over).
+- All 24 slides AND speaker notes fully translated — dictate in any language
+  via the speaker view (`S`).
+- Shareable per-language deep links, e.g. `…/index-es.html#/10`.

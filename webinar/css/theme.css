@@ -157,6 +157,39 @@ body { box-sizing: border-box; padding-top: 52px; background: var(--bg); }
 .rail-seg[data-phase="Q"].active { color: var(--amber); }
 .rail-seg[data-phase="A"].active { color: var(--green); }
 
+/* ---------- Language switcher (top-right, above the rail) ---------- */
+
+#lang-switch {
+  position: fixed;
+  top: 8px; right: 14px;
+  z-index: 45;
+  display: flex; gap: 6px;
+  font-family: var(--r-main-font);
+}
+.lang-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  height: 36px; padding: 0 12px;
+  border-radius: 9px;
+  border: 1px solid var(--card-border);
+  background: rgba(13, 18, 25, 0.88);
+  color: var(--muted);
+  font-size: 13px; font-weight: 700; letter-spacing: 0.04em;
+  cursor: pointer; text-decoration: none;
+  backdrop-filter: blur(5px);
+  transition: border-color 0.2s ease, color 0.2s ease;
+}
+.lang-btn .flag { font-size: 17px; line-height: 1; }
+.lang-btn:hover { border-color: var(--blue); color: var(--text); }
+.lang-btn.active {
+  border-color: var(--amber);
+  color: var(--text);
+  background: rgba(245, 166, 35, 0.12);
+  cursor: default;
+}
+
+/* Reserve room at the rail's right end so segments never sit under the switcher */
+#scqa-rail { padding-right: 240px; }
+
 /* ---------- Bottom-left HUD: repo link + fullscreen ---------- */
 
 #deck-hud {

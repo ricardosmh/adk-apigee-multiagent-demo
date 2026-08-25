@@ -1,0 +1,707 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>Gobernanza de Sistemas Multiagente Empresariales en Google Cloud</title>
+  <meta name="description" content="Una arquitectura de referencia replicable con GEAP, el protocolo A2A y Apigee X">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>🛡️</text></svg>">
+  <link rel="stylesheet" href="css/reveal.css">
+  <link rel="stylesheet" href="css/theme.css">
+</head>
+<body>
+
+  <nav id="scqa-rail" class="rail-hidden" aria-label="Fases de la presentación">
+    <div class="rail-brand">Gobernanza Multiagente en GCP</div>
+    <div class="rail-seg" data-phase="S"><span class="seg-dot"></span>Situación</div>
+    <div class="rail-seg" data-phase="C"><span class="seg-dot"></span>Complicación</div>
+    <div class="rail-seg" data-phase="Q"><span class="seg-dot"></span>Pregunta</div>
+    <div class="rail-seg" data-phase="A"><span class="seg-dot"></span>Respuesta</div>
+  </nav>
+
+  <nav id="lang-switch" aria-label="Idioma">
+    <a class="lang-btn" data-target="index.html"><span class="flag">🇺🇸</span>EN</a>
+    <a class="lang-btn active" data-target="index-es.html"><span class="flag">🇪🇸</span>ES</a>
+    <a class="lang-btn" data-target="index-pt.html"><span class="flag">🇧🇷</span>PT</a>
+  </nav>
+
+  <div id="deck-hud">
+    <a class="hud-btn" href="https://github.com/ricardosmh/adk-apigee-multiagent-demo"
+       target="_blank" rel="noopener" title="Abrir el repositorio en GitHub">
+      <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
+      adk-apigee-multiagent-demo
+    </a>
+    <button class="hud-btn" id="fsToggle" title="Alternar pantalla completa (o presiona F)">⛶&nbsp;Pantalla completa</button>
+  </div>
+
+  <div class="reveal">
+    <div class="slides">
+
+      <!-- 1 · PORTADA -->
+      <section class="cover" data-rail="hide"
+               data-background-gradient="radial-gradient(ellipse at 30% -20%, #14304f 0%, #0b0f14 55%)">
+        <div class="kicker k-blue" style="font-size:0.46em;">Webinar de Arquitectura en Google Cloud</div>
+        <h1>Gobernanza de Sistemas Multiagente Empresariales en Google Cloud</h1>
+        <p class="sub">Una arquitectura de referencia replicable con la <strong>Gemini Enterprise Agent Platform</strong> (GEAP), el <strong>protocolo A2A</strong> y <strong>Apigee&nbsp;X</strong></p>
+        <div class="meta">
+          <span><strong>Repo</strong>&nbsp; adk-apigee-multiagent-demo</span>
+          <span><strong>Formato</strong>&nbsp; 40 min + 2 demos en vivo</span>
+          <span><strong>Licencia</strong>&nbsp; Apache 2.0</span>
+        </div>
+        <aside class="notes">
+          Bienvenidos, todos. Hoy vamos a ver qué se necesita realmente para operar un sistema de IA multiagente en producción sobre Google Cloud. La mayoría de las demos del mundo de la IA se construyen dentro de un solo proyecto, en el equipo de un desarrollador, con API keys personales y conexiones directas a internet. Eso está muy bien para prototipar, pero no es como funciona el software empresarial. En el mundo real hay fronteras de red estrictas, requisitos de identidad, presupuestos de tokens y mandatos de auditoría. Lo que presentamos hoy no es un juguete ni un diagrama conceptual. Es una implementación de referencia completa y funcional que abarca tres proyectos separados de Google Cloud, gobierna cada interacción con modelos y herramientas a través de Apigee, traza cada salto del navegador a la base de datos con un único ID de correlación, y se reconstruye desde cero con manifiestos declarativos. Todo es open source. Comencemos.
+        </aside>
+      </section>
+
+      <!-- 2 · S1 -->
+      <section data-scqa="S" data-background-gradient="radial-gradient(ellipse at 85% -25%, #12283f 0%, #0b0f14 52%)">
+        <div class="kicker k-blue">Situación</div>
+        <h2>Los chatbots de un solo modelo evolucionan hacia redes multiagente coordinadas</h2>
+        <div class="grid cols-3">
+          <div class="card t-blue fragment fade-up">
+            <h3><span class="ico">🧭</span>Descomposición del trabajo</h3>
+            <p>Los chatbots monolíticos de un solo prompt dan paso a <strong>agentes supervisores</strong> que orquestan especialistas de dominio.</p>
+          </div>
+          <div class="card t-blue fragment fade-up">
+            <h3><span class="ico">⚙️</span>Acción autónoma</h3>
+            <p>Los especialistas actúan sobre sistemas de negocio reales mediante el <strong>Model Context Protocol (MCP)</strong> y APIs REST — no solo generan texto.</p>
+          </div>
+          <div class="card t-blue fragment fade-up">
+            <h3><span class="ico">🌐</span>Operación distribuida</h3>
+            <p>Una sola pregunta se despliega entre engines, microservicios y bases de datos — cruzando <strong>fronteras operativas</strong> reales.</p>
+          </div>
+        </div>
+        <aside class="notes">
+          En los últimos dos años, la IA empresarial superó su primera fase, que fue sobre todo de chatbots y asistentes de un solo prompt. Hoy las organizaciones construyen sistemas multiagente donde un supervisor delega tareas especializadas a agentes de dominio: un especialista de pedidos, otro de perfiles de cliente, otro de catálogo de productos. Estos agentes no solo generan texto; interactúan con bases de datos y microservicios reales a través del Model Context Protocol. Y en cuanto conectas agentes autónomos a sistemas de negocio en producción, la arquitectura cambia por completo. Ya no administras una API simple de petición y respuesta. Orquestas un sistema distribuido de entidades semiautónomas que negocian tareas, ejecutan transacciones y consumen tokens de LLM costosos a gran velocidad.
+        </aside>
+      </section>
+
+      <!-- 3 · S2 -->
+      <section data-scqa="S" data-background-gradient="radial-gradient(ellipse at 15% -25%, #12283f 0%, #0b0f14 52%)">
+        <div class="kicker k-blue">Situación</div>
+        <h2>Google Cloud ya ofrece los bloques de construcción — el reto es el cableado</h2>
+        <div class="grid cols-4">
+          <div class="card t-blue has-logo">
+            <h3><span class="ico">🤖</span>GEAP Agent Engine</h3>
+            <p>Runtime administrado para agentes ADK en la <strong>Gemini Enterprise Agent Platform</strong> (antes Vertex AI): sesiones, escalado, registro.</p>
+            <span class="card-logos"><img src="img/logos/geap.svg" alt="GEAP"><img src="img/logos/adk.png" alt="Agent Development Kit"></span>
+          </div>
+          <div class="card t-blue has-logo">
+            <h3><span class="ico">🔁</span>Protocolo A2A</h3>
+            <p>Estándar para descubrimiento de agentes, tarjetas de capacidades y <strong>streaming de tokens</strong> entre supervisor y especialistas.</p>
+            <span class="card-logos"><img src="img/logos/a2a.svg" alt="A2A"></span>
+          </div>
+          <div class="card t-amber has-logo">
+            <h3><span class="ico">🛡️</span>Apigee X</h3>
+            <p>El gateway empresarial: <strong>keys, cuotas, analítica, políticas</strong> — probado en tráfico de APIs de misión crítica.</p>
+            <span class="card-logos"><img src="img/logos/apigee.svg" alt="Apigee"></span>
+          </div>
+          <div class="card t-green has-logo">
+            <h3><span class="ico">🗄️</span>Cloud Run + SQL</h3>
+            <p>Servicios de negocio serverless y MySQL administrado, conectados de forma privada vía <strong>Private Service Connect</strong>.</p>
+            <span class="card-logos"><img src="img/logos/cloud-run.svg" alt="Cloud Run"><img src="img/logos/cloud-sql.svg" alt="Cloud SQL"></span>
+          </div>
+        </div>
+        <p class="lede" style="margin-top:1em;">Cada componente es maduro y está disponible hoy. Lo que falta es una <strong>topología gobernada y replicable</strong> que los una.</p>
+        <aside class="notes">
+          La buena noticia es que no necesitamos inventar infraestructura nueva. Google Cloud ya ofrece las piezas fundamentales. La Gemini Enterprise Agent Platform — GEAP, que muchos conocerán por su nombre anterior, Vertex AI — nos da Agent Engine, un runtime serverless totalmente administrado para reasoning engines construido sobre el Agent Development Kit. El protocolo Agent-to-Agent, A2A, estandariza la comunicación y la negociación de capacidades entre supervisores y subagentes. Cloud Run y Cloud SQL aportan cómputo escalable y persistencia relacional segura. Y Apigee aporta la capa de gestión de APIs que ha gobernado tráfico de misión crítica durante décadas. Todos los componentes son maduros y están disponibles hoy. El verdadero reto no es si las piezas existen, sino cómo cablearlas en una topología de producción segura, gobernada y operable. Ese cableado es exactamente el tema de esta sesión.
+        </aside>
+      </section>
+
+      <!-- 4 · S3 -->
+      <section data-scqa="S" data-background-gradient="radial-gradient(ellipse at 50% -25%, #12283f 0%, #0b0f14 52%)">
+        <div class="kicker k-blue">Situación</div>
+        <h2>Lo que construimos: un supervisor en vivo delegando a especialistas — frente a ustedes</h2>
+        <img class="r-stretch shot-img" src="img/agent-view.png" alt="Vista Agent: el supervisor delega por A2A con streaming">
+        <p class="caption">La vista Agent de la demo: los chips de delegación aparecen en el instante en que el supervisor delega por A2A; los tokens fluyen de extremo a extremo.</p>
+        <aside class="notes">
+          Antes de hablar de problemas, déjenme aterrizar esto en algo real. Este es el sistema que vamos a diseccionar hoy — no es una maqueta. Lo que ven es la vista de chat con agentes de la demo. Un usuario pregunta al supervisor por pedidos, productos o clientes, y pueden ver cómo delega en vivo por el protocolo A2A. En el momento en que el supervisor delega al especialista de pedidos, aparece un chip de delegación en la interfaz, y la respuesta del especialista fluye token a token por toda la cadena. Guarden esta imagen: un navegador, un supervisor, tres especialistas, microservicios reales y una base de datos real — todo en vivo. La pregunta de los próximos minutos es: ¿qué se necesita para operar esto con seguridad en una empresa? Porque, tal cual sale de la caja, un sistema así trae cuatro problemas serios.
+        </aside>
+      </section>
+
+      <!-- 5 · C1 -->
+      <section data-scqa="C" data-background-gradient="radial-gradient(ellipse at 80% -25%, #3a1420 0%, #0b0f14 55%)">
+        <div class="kicker k-red">Complicación · Gobernanza y Confianza</div>
+        <h2>Acceso a modelos sin gobernanza, y nadie puede decir quién gastó los tokens</h2>
+        <div class="grid cols-2">
+          <div class="card t-red fragment fade-up">
+            <h3><span class="ico">🕳️</span>LLMs en la sombra con credenciales amplias</h3>
+            <ul>
+              <li>Los agentes llaman a los modelos directamente con keys estáticas de service accounts.</li>
+              <li>Sin identidad por usuario en el perímetro del modelo, sin cuotas.</li>
+              <li>Revocar a un usuario implica romper el agente entero.</li>
+            </ul>
+          </div>
+          <div class="card t-red fragment fade-up">
+            <h3><span class="ico">🧾</span>Cero atribución de costos</h3>
+            <ul>
+              <li><em>"¿Quién gastó los tokens, en qué modelo, a través de qué agente?"</em> — imposible de responder.</li>
+              <li>El gasto es invisible hasta que llega la factura mensual.</li>
+              <li>Responderlo implica construir un pipeline de logs a medida.</li>
+            </ul>
+          </div>
+        </div>
+        <aside class="notes">
+          Cuando un equipo empuja una prueba de concepto de agentes hacia producción, el primer muro es la gobernanza y el control financiero. En los montajes típicos, los agentes llaman a Vertex o a modelos de terceros directamente con credenciales amplias de service account o API keys estáticas en variables de entorno. No hay verificación de identidad por usuario en la frontera del modelo, no existe el concepto de cuotas de tokens, y no hay forma de revocar a un solo usuario sin romper el agente completo. Luego llega la factura mensual y nadie puede responder preguntas contables básicas: ¿quién gastó cincuenta mil dólares en llamadas a modelos esta semana? ¿Qué agente generó esos tokens — el especialista de pedidos o el supervisor? ¿Qué usuario final provocó esa carga? Sin un gateway de gobernanza en la ruta, responder esas preguntas exige construir y mantener un pipeline a medida solo para parsear y correlacionar logs de infraestructura.
+        </aside>
+      </section>
+
+      <!-- 6 · C2 -->
+      <section data-scqa="C" data-background-gradient="radial-gradient(ellipse at 20% -25%, #3a1420 0%, #0b0f14 55%)">
+        <div class="kicker k-red">Complicación · Gobernanza y Confianza</div>
+        <h2>La delegación multi-salto convierte cada transacción en una caja negra</h2>
+        <div class="chain">
+          <span class="hop">Navegador</span><span class="arr">→</span>
+          <span class="hop">BFF</span><span class="arr">→</span>
+          <span class="hop">Supervisor</span><span class="arr">→</span>
+          <span class="hop">Especialista</span><span class="arr">→</span>
+          <span class="hop">MCP</span><span class="arr">→</span>
+          <span class="hop">Cloud Run</span><span class="arr">→</span>
+          <span class="hop">Cloud SQL</span>
+        </div>
+        <p style="text-align:center; font-size:0.6em; font-weight:700;" class="c-red">¿Dónde ocurrió realmente el pico de 12 segundos de latencia — o el error 500?</p>
+        <div class="grid cols-3">
+          <div class="card fragment fade-up"><h3><span class="ico">🗂️</span>Silos dispersos</h3><p>Logs repartidos entre proyectos y fronteras de servicio, cada uno con su propio formato.</p></div>
+          <div class="card fragment fade-up"><h3><span class="ico">⏱️</span>Sin reloj común</h3><p>Métricas de latencia con formas distintas y precisión inconsistente — nada cuadra.</p></div>
+          <div class="card fragment fade-up"><h3><span class="ico">✂️</span>Contexto de traza roto</h3><p>El <code>traceparent</code> se pierde en los saltos A2A y en las llamadas a herramientas MCP.</p></div>
+        </div>
+        <aside class="notes">
+          El segundo bloqueo es la opacidad. En una arquitectura multiagente, una consulta del usuario desata una cascada: el supervisor inspecciona el prompt, llama a un modelo, delega por A2A al agente de pedidos, que llama a otro modelo, invoca una herramienta MCP, que golpea un microservicio interno, que ejecuta una consulta SQL. Si esa petición tarda doce segundos o falla con un error 500, ¿dónde se rompió? ¿Fue latencia del modelo, una consulta lenta, un timeout de red o overhead de orquestación? En las arquitecturas estándar esos logs están dispersos en distintos servicios y proyectos, con formatos diferentes y sin identificador de correlación común — y el contexto de traza que los uniría se pierde justo en las fronteras interesantes: el salto A2A y la llamada a la herramienta MCP. Depurar una transacción fallida se convierte en buscar una aguja en cuatro pajares distintos.
+        </aside>
+      </section>
+
+      <!-- 7 · C3 -->
+      <section data-scqa="C" data-background-gradient="radial-gradient(ellipse at 80% -25%, #3a1420 0%, #0b0f14 55%)">
+        <div class="kicker k-red">Complicación · Realidad de Seguridad</div>
+        <h2>Los prototipos de agentes traen vulnerabilidades que bloquean su adopción</h2>
+        <div class="grid cols-2">
+          <div class="card t-red fragment fade-up"><h3><span class="ico">🎭</span>Identidad falsificable</h3><p>Confiar en headers crudos como <code>X-User-Email</code> en vez de verificar JWTs firmados. Cualquiera puede ser cualquiera.</p></div>
+          <div class="card t-red fragment fade-up"><h3><span class="ico">👑</span>Service accounts todopoderosas</h3><p>Todos los agentes compartiendo una identidad sobre-privilegiada con acceso ilimitado entre proyectos.</p></div>
+          <div class="card t-red fragment fade-up"><h3><span class="ico">📡</span>Backends públicos</h3><p>Microservicios internos aceptando tráfico de internet, protegidos solo por una API key en el perímetro.</p></div>
+          <div class="card t-red fragment fade-up"><h3><span class="ico">🔑</span>Contraseñas en variables de entorno</h3><p>Credenciales de base de datos en texto plano en vez de autenticación IAM de base de datos.</p></div>
+        </div>
+        <aside class="notes">
+          Desde la perspectiva de seguridad, los prototipos de agentes hacen concesiones peligrosas para funcionar. Confían en headers de identidad falsificables como X-User-Email enviados desde el navegador, en lugar de verificar criptográficamente JWTs firmados. Dan a cada agente una única service account compartida con privilegios amplios en vez de mínimo privilegio. Exponen microservicios internos directamente a internet porque la red entre VPCs parece demasiado compleja. Y guardan contraseñas de base de datos en variables de entorno. En un entorno empresarial, una sola de estas vulnerabilidades es un bloqueo inmediato — las cuatro juntas son un no rotundo. Una arquitectura de agentes de producción debe garantizar que los backends no tengan superficie pública, que la identidad esté probada criptográficamente y que credenciales como contraseñas de base de datos simplemente no existan.
+        </aside>
+      </section>
+
+      <!-- 8 · C4 -->
+      <section data-scqa="C" data-background-gradient="radial-gradient(ellipse at 20% -25%, #3a1420 0%, #0b0f14 55%)">
+        <div class="kicker k-red">Complicación · Realidad de Ingeniería</div>
+        <h2>Acoplamiento frágil, entornos irrepetibles y documentación que se acaba</h2>
+        <div class="grid cols-3">
+          <div class="card t-red fragment fade-up">
+            <h3><span class="ico">🧩</span>Acoplamiento frágil</h3>
+            <p>Cada despliegue genera un nuevo engine ID. Si lo codificas a mano, <strong>redesplegar un especialista rompe al supervisor</strong>.</p>
+          </div>
+          <div class="card t-red fragment fade-up">
+            <h3><span class="ico">🌀</span>Drift de configuración</h3>
+            <p>Clics en consola e IDs de proyecto codificados: funciona en un proyecto, <strong>falla en el siguiente</strong>.</p>
+          </div>
+          <div class="card t-red fragment fade-up">
+            <h3><span class="ico">🗺️</span>Bordes sin documentar</h3>
+            <p>Streaming A2A bajo ADK 2.3, SSE por un gateway, PSC bidireccional — <strong>sin referencias funcionales en ningún lado</strong>.</p>
+          </div>
+        </div>
+        <aside class="notes">
+          Por último, la realidad de ingeniería del día a día. En Agent Engine, cada despliegue produce un nuevo ID de recurso. Si tu supervisor codifica a mano el engine ID del especialista, redesplegar ese especialista rompe al supervisor al instante. Montar la infraestructura — Private Service Connect entre proyectos, autenticación IAM de base de datos, DNS privado, proxies — implica docenas de pasos interdependientes; hecho a mano en la consola, obtienes drift, IDs de proyecto codificados y entornos imposibles de reproducir. Y cuando buscas documentación de las partes genuinamente difíciles — streaming de tokens por A2A bajo ADK 2.3, o Private Service Connect bidireccional entre Apigee y Cloud Run — la documentación oficial se acaba. Los equipos pasan meses redescubriendo las mismas soluciones a las mismas trampas de integración.
+        </aside>
+      </section>
+
+      <!-- 9 · LA PREGUNTA -->
+      <section data-scqa="Q" data-background-gradient="radial-gradient(ellipse at 50% 120%, #2a1d05 0%, #05070a 60%)">
+        <div class="pivot">
+          <div class="kicker k-amber" style="font-size:0.5em; margin-bottom:1.6em;">La Pregunta Arquitectónica Central</div>
+          <p>¿Puedes construir un sistema multiagente donde <span class="c-amber">cada llamada</span> — modelo, herramienta, agente, API de&nbsp;negocio — esté <span class="c-amber">gobernada, atribuida, trazada y sea privada</span>…<br>
+          y todo el stack se reconstruya desde <span class="c-amber">tres proyectos vacíos</span>?</p>
+        </div>
+        <aside class="notes">
+          Y esta es la pregunta central del webinar. ¿Puedes construir un sistema multiagente donde absolutamente cada llamada — sea una invocación de modelo, la ejecución de una herramienta MCP, una delegación entre agentes o una petición a una API de negocio — esté estrictamente gobernada, atribuida a un usuario verificado, trazada bajo un único ID y sea completamente privada… y donde toda la infraestructura multiproyecto pueda reconstruirse desde cero con herramientas declarativas y automatizadas? Deténganse un segundo en ella, porque cada complicación que acabamos de ver está escondida en esta única frase. La respuesta es sí — y el resto de la sesión recorre la arquitectura exacta, los mecanismos y el código de la implementación de referencia que lo demuestra.
+        </aside>
+      </section>
+
+      <!-- 10 · A1: ARQUITECTURA -->
+      <section data-scqa="A" class="arch-slide"
+               data-background-gradient="radial-gradient(ellipse at 50% -25%, #10261a 0%, #0b0f14 52%)">
+        <div class="kicker k-green">Respuesta · La Arquitectura</div>
+        <h2 style="margin-bottom:0.15em;">Una topología, tres proyectos, cada ruta pasa por el gateway</h2>
+        <div class="arch-viewport" id="archViewport">
+          <img id="archImg" src="img/architecture.svg" alt="Diagrama completo de arquitectura: proyecto de IA, proyecto de Apigee, proyecto backend">
+          <div class="arch-controls">
+            <button id="archZoomOut" title="Alejar">−</button>
+            <button id="archZoomIn" title="Acercar">+</button>
+            <button id="archReset" title="Ajustar a pantalla">Ajustar</button>
+          </div>
+          <div class="arch-hint">🖱️ arrastra para mover · rueda para zoom · doble clic para acercar · Ajustar para restablecer</div>
+        </div>
+        <aside class="notes">
+          Este es el ancla arquitectónica de toda la sesión — el diagrama completo y detallado, y es navegable, así que déjenme recorrerlo en vivo. A la izquierda, el proyecto de IA: el navegador entra por Identity-Aware Proxy hacia el backend-for-frontend en Cloud Run, y aquí están los cuatro Agent Engines — el supervisor y los tres especialistas — más Firestore para el ACL y Secret Manager para las keys. En el centro, el proyecto de Apigee: un host de runtime que expone las rutas base que gobiernan todo — el endpoint de agentes, las rutas de modelos, el gateway MCP y las APIs de e-commerce. A la derecha, el proyecto backend: tres microservicios FastAPI detrás de un balanceador interno regional, y Cloud SQL MySQL con autenticación IAM. Fíjense en los dos enlaces de Private Service Connect que cruzan las fronteras de proyecto — hacia el norte, del proyecto de IA a Apigee, y hacia el sur, de Apigee al backend. El proyecto de IA no tiene conectividad directa alguna con el backend; toda interacción pasa obligatoriamente por el plano de gobernanza. Iré haciendo zoom a cada región conforme la discutamos en las próximas láminas.
+        </aside>
+      </section>
+
+      <!-- 11 · A2: tres proyectos -->
+      <section data-scqa="A" data-background-gradient="radial-gradient(ellipse at 15% -25%, #10261a 0%, #0b0f14 52%)">
+        <div class="kicker k-green">Respuesta · La Arquitectura</div>
+        <h2>Tres proyectos, una responsabilidad cada uno — separación auditable</h2>
+        <div class="grid cols-3">
+          <div class="card t-blue">
+            <h3><span class="ico">🧠</span>Proyecto de IA</h3>
+            <ul>
+              <li><strong>4 Agent Engines</strong> — supervisor + 3 especialistas (GEAP)</li>
+              <li>BFF en Cloud Run, detrás de IAP — nunca público</li>
+              <li>ACL en Firestore · Secret Manager</li>
+              <li><strong>Toda la telemetría aterriza aquí</strong> — el panel único</li>
+            </ul>
+          </div>
+          <div class="card t-amber">
+            <h3><span class="ico">🛡️</span>Proyecto de Apigee</h3>
+            <ul>
+              <li>Organización Apigee X — <strong>7 proxies</strong></li>
+              <li>API products con <strong>cuotas de tokens LLM</strong></li>
+              <li>Apps y keys por usuario y por agente</li>
+              <li>Acuña tokens de Google hacia arriba según la dirección</li>
+            </ul>
+          </div>
+          <div class="card t-green">
+            <h3><span class="ico">🏪</span>Proyecto Backend</h3>
+            <ul>
+              <li>3 microservicios FastAPI en Cloud Run</li>
+              <li>Cloud SQL MySQL — <strong>autenticación IAM, sin contraseñas</strong></li>
+              <li>ALB interno regional, enrutado por ruta</li>
+              <li><strong>Sin superficie pública alguna</strong> — solo PSC</li>
+            </ul>
+          </div>
+        </div>
+        <aside class="notes">
+          Hagamos explícita la separación, porque es el argumento. Tres proyectos, una responsabilidad cada uno. El proyecto de Apigee es el plano de gobernanza: contiene los siete proxies, los API products que definen las cuotas de tokens, y las apps y credenciales de cada agente y cada usuario final. El proyecto de IA ejecuta la carga de trabajo: cuatro Agent Engines en GEAP, el backend-for-frontend detrás de IAP, la base de autorización en Firestore, Secret Manager — y además es el panel único donde aterriza la telemetría de todos los componentes. El proyecto backend simula tu sistema de negocio existente: tres microservicios y una base MySQL que el proyecto de IA no puede alcanzar directamente en absoluto. ¿Por qué importa? Porque las fronteras se imponen con IAM a nivel de proyecto y red privada, no por convención. El gateway es infraestructura compartida con su propio ciclo de vida; el sistema de negocio queda intacto ante las preocupaciones de IA; y un auditor puede razonar sobre cada proyecto de forma independiente.
+        </aside>
+      </section>
+
+      <!-- 12 · A3: tabla de gobernanza -->
+      <section data-scqa="A" data-background-gradient="radial-gradient(ellipse at 85% -25%, #2a1d05 0%, #0b0f14 55%)">
+        <div class="kicker k-amber">Respuesta · Plano de Gobernanza</div>
+        <h2>Cada llamada cruza un solo gateway — modelos, herramientas, agentes, APIs de negocio</h2>
+        <table class="gov">
+          <thead>
+            <tr><th>Ruta base</th><th>Frente a</th><th>Credencial del llamante</th><th>Credencial upstream (acuñada por Apigee)</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>/ai-agents</code></td><td>El engine supervisor</td><td><code>x-api-key</code> de la app BFF</td><td><code>GoogleAccessToken</code></td></tr>
+            <tr><td><code>/aiplatform</code></td><td>Llamadas a modelos desde los agentes</td><td><code>x-api-key</code> propia de cada agente</td><td><code>GoogleAccessToken</code></td></tr>
+            <tr><td><code>/llm-stream</code></td><td>Chat directo — Gemini <strong>y</strong> Claude, SSE</td><td><code>x-api-key</code> personal del usuario</td><td><code>GoogleAccessToken</code></td></tr>
+            <tr><td><code>/mcp</code></td><td>Catálogo y ejecución de herramientas MCP</td><td><code>x-api-key</code> del especialista</td><td>Enrutamiento MCP privado</td></tr>
+            <tr><td><code>/*-management</code></td><td>Servicios de e-commerce (3)</td><td>Servidor MCP</td><td><code>GoogleIDToken</code> → ALB interno</td></tr>
+          </tbody>
+        </table>
+        <p class="lede" style="margin-top:0.9em;">Credenciales divididas por dirección: los consumidores presentan keys; <strong class="c-amber">Apigee acuña tokens de Google hacia arriba</strong>. 7 proxies, un solo lenguaje de políticas.</p>
+        <aside class="notes">
+          Así funciona Apigee como sistema nervioso central — esta tabla es toda la historia de gobernanza en cinco filas. El proxy ai-agents antepone el engine supervisor, traduciendo las llamadas del cliente en peticiones autenticadas al Reasoning Engine. El proxy aiplatform antepone cada llamada a modelos que hacen los agentes — los agentes nunca hablan con los modelos de forma nativa. El proxy llm-stream es el endpoint SSE unificado para chat directo usuario-modelo, enrutando por nombre de modelo hacia Gemini o Claude mientras aplica idéntica política de seguridad y cuotas a ambos publishers. El proxy mcp gobierna el descubrimiento y la ejecución de herramientas. Y los tres proxies de management anteponen los microservicios del backend, acuñando Google ID tokens de corta vida hacia el balanceador interno. Noten la división de credenciales: hacia el sur, los consumidores siempre presentan una API key; hacia el norte, Apigee acuña la credencial de Google apropiada. Ningún consumidor posee jamás una credencial de Google para algo que no debe alcanzar.
+        </aside>
+      </section>
+
+      <!-- 13 · A4: gobernanza por usuario -->
+      <section data-scqa="A" data-background-gradient="radial-gradient(ellipse at 15% -25%, #2a1d05 0%, #0b0f14 55%)">
+        <div class="kicker k-amber">Respuesta · Plano de Gobernanza</div>
+        <h2>Keys ligadas a la identidad, cuotas aplicadas antes de ejecutar el modelo</h2>
+        <div class="split">
+          <div class="shot"><img src="img/direct-view.gif" alt="Vista Direct: Gemini y Claude tras un mismo gateway, key por usuario"></div>
+          <div>
+            <div class="card t-amber" style="margin-bottom:0.5em;">
+              <h3><span class="ico">🪪</span>Vínculo key ↔ identidad</h3>
+              <p>El <code>owner_email</code> de la key debe coincidir con la identidad IAP verificada. <strong>Una key robada recibe 403.</strong></p>
+            </div>
+            <div class="card t-amber" style="margin-bottom:0.5em;">
+              <h3><span class="ico">⛔</span>Cuotas en el borde</h3>
+              <p><strong>100k tokens/hora</strong> por agente · <strong>10k/5 min</strong> por usuario — contadas del uso real, rechazadas <em>antes</em> de llamar al modelo.</p>
+            </div>
+            <div class="card t-amber">
+              <h3><span class="ico">🔀</span>Dos publishers, una política</h3>
+              <p>Gemini y Claude tras el mismo endpoint, mismas keys, mismas cuotas, mismo logging.</p>
+            </div>
+          </div>
+        </div>
+        <aside class="notes">
+          Así muere el problema del acceso sin gobernanza. En pantalla está la vista Direct de la demo — un usuario conversando con Gemini o Claude a través del gateway con su propia API key personal. Cuando la petición llega a Apigee, el gateway no solo valida la key. Verifica que el owner_email asociado a esa key coincida con la identidad IAP verificada criptográficamente de quien llama. Si alguien roba tu key, no le sirve de nada — su correo autenticado no coincidirá, y el gateway devuelve un 403. Además, Apigee aplica cuotas de tokens LLM en el borde, antes de que la petición llegue al modelo: cien mil tokens por hora por agente, diez mil tokens por cinco minutos por usuario, contados sobre el uso real. Un agente en bucle o un usuario ansioso se detiene en la puerta — protegiendo presupuesto y backend. Y fíjense en el selector de modelos: Gemini y Claude, dos publishers, exactamente un régimen de gobernanza.
+        </aside>
+      </section>
+
+      <!-- 14 · A5: especialistas -->
+      <section data-scqa="A" data-background-gradient="radial-gradient(ellipse at 85% -25%, #12283f 0%, #0b0f14 52%)">
+        <div class="kicker k-blue">Respuesta · Plano de IA</div>
+        <h2>Especialistas pequeños a propósito: un dominio, una key, un subconjunto de herramientas</h2>
+        <div class="grid cols-3">
+          <div class="card t-blue">
+            <h3><span class="ico">📦</span>order_agent</h3>
+            <ul>
+              <li>Engine propio · service account propia</li>
+              <li>Key de Apigee propia vía Secret Manager</li>
+              <li>Solo las herramientas MCP de <strong>pedidos</strong></li>
+            </ul>
+          </div>
+          <div class="card t-blue">
+            <h3><span class="ico">🏷️</span>product_agent</h3>
+            <ul>
+              <li>Engine propio · service account propia</li>
+              <li>Key de Apigee propia vía Secret Manager</li>
+              <li>Solo las herramientas MCP de <strong>catálogo</strong></li>
+            </ul>
+          </div>
+          <div class="card t-blue">
+            <h3><span class="ico">👤</span>customer_agent</h3>
+            <ul>
+              <li>Engine propio · service account propia</li>
+              <li>Key de Apigee propia vía Secret Manager</li>
+              <li>Solo las herramientas MCP de <strong>clientes</strong></li>
+            </ul>
+          </div>
+        </div>
+        <div class="stat-row">
+          <div class="stat"><span class="n c-blue">4</span><span class="l">agent engines</span></div>
+          <div class="stat"><span class="n c-blue">2</span><span class="l">publishers de modelos</span></div>
+          <div class="stat"><span class="n c-amber">1 key</span><span class="l">por identidad</span></div>
+          <div class="stat"><span class="n c-green">0</span><span class="l">credenciales compartidas</span></div>
+        </div>
+        <aside class="notes">
+          En lugar de un agente monolítico con docenas de herramientas, la capacidad se divide en tres especialistas: pedidos, productos y clientes. Cada uno corre como engine independiente, bajo su propia service account dedicada, con su propia key de Apigee entregada como referencia de Secret Manager. Y lo crucial: cada especialista ve únicamente las herramientas MCP de su dominio — el agente de pedidos no puede ver herramientas de clientes, y el de productos no puede modificar pedidos. Esto es deliberado y paga doble. Primero, seguridad: es mínimo privilegio a nivel de agente, con atribución y cuotas por agente en el gateway. Segundo, calidad: una superficie de herramientas pequeña mantiene determinista la selección de herramientas del modelo — cuantas menos herramientas puede invocar un agente, más fiablemente invoca la correcta. Los especialistas incluso corren sobre publishers distintos — unos en Gemini, otros en Claude — tras el mismo gateway con gobernanza idéntica.
+        </aside>
+      </section>
+
+      <!-- 15 · A6: A2A + self-heal -->
+      <section data-scqa="A" data-background-gradient="radial-gradient(ellipse at 15% -25%, #12283f 0%, #0b0f14 52%)">
+        <div class="kicker k-blue">Respuesta · Plano de IA</div>
+        <h2>Delegación con streaming por A2A — y descubrimiento que se auto-repara</h2>
+        <div class="grid cols-2">
+          <div class="card t-blue">
+            <h3><span class="ico">📡</span>Streaming de tokens A2A (ADK 2.3)</h3>
+            <ul>
+              <li>Proxies <code>RemoteA2aAgent</code> con client factory de streaming + conversor SSE.</li>
+              <li>La UI revela la delegación en el instante en que <code>transfer_to_agent</code> se dispara.</li>
+              <li>Los hooks exactos están documentados — uno de los bordes sin documentar, resuelto.</li>
+            </ul>
+          </div>
+          <div class="card t-blue">
+            <h3><span class="ico">🔄</span>Auto-reparación vía Registry (TTL ~60s)</h3>
+            <ul>
+              <li>Los especialistas se auto-registran en Agent Registry al desplegarse.</li>
+              <li>En cada turno, el supervisor re-apunta al <strong>engine vivo más reciente</strong> desde una caché con TTL.</li>
+              <li>Redespliega especialistas todo el día — <strong>cero redespliegues del supervisor</strong>.</li>
+            </ul>
+          </div>
+        </div>
+        <p class="lede" style="margin-top:0.9em;">Acoplamiento frágil — resuelto: el engine ID se <strong>resuelve en tiempo de ejecución</strong>, nunca se codifica a mano.</p>
+        <aside class="notes">
+          La comunicación entre agentes viaja sobre el protocolo A2A, y aquí se resuelven dos problemas difíciles. Primero, el streaming. El supervisor se conecta a los especialistas mediante proxies RemoteA2aAgent configurados con un client factory de streaming bajo ADK 2.3 — los hooks exactos de client factory y conversor están en el repo, porque este es precisamente uno de esos bordes sin documentar donde los equipos queman semanas. El resultado: la UI muestra la delegación en el momento en que el supervisor emite la transferencia, y los tokens del especialista fluyen de vuelta por la cadena. Segundo, el descubrimiento. Cada especialista se auto-registra en Agent Registry al desplegarse. El supervisor, en cada turno, resuelve cada especialista al engine registrado más reciente mediante una caché con TTL de sesenta segundos. Así que cuando redespliegas el agente de pedidos y obtiene un engine ID nuevo, el supervisor lo adopta en menos de un minuto — sin reiniciar, sin redesplegar, sin coordinación. La complicación del acoplamiento frágil simplemente desaparece.
+        </aside>
+      </section>
+
+      <!-- 16 · A7: ACL -->
+      <section data-scqa="A" data-background-gradient="radial-gradient(ellipse at 85% -25%, #10261a 0%, #0b0f14 52%)">
+        <div class="kicker k-green">Respuesta · Plano de IA · Seguridad</div>
+        <h2>Acceso a agentes por usuario, fail-closed, revocable con un clic</h2>
+        <div class="grid cols-3">
+          <div class="card t-green fragment fade-up">
+            <h3><span class="ico">🔍</span>Evaluado en cada turno</h3>
+            <p>Un <code>before_agent_callback</code> filtra los subagentes contra el ACL de Firestore del usuario en <strong>cada consulta</strong> — los cambios de permisos aplican en el turno siguiente.</p>
+          </div>
+          <div class="card t-green fragment fade-up">
+            <h3><span class="ico">🚪</span>Fail-closed por defecto</h3>
+            <p>Sin registro en Firestore → <strong>sin acceso a agentes</strong>. Un <code>before_tool_callback</code> de bloqueo duro es la red de seguridad infranqueable.</p>
+          </div>
+          <div class="card t-green fragment fade-up">
+            <h3><span class="ico">🎛️</span>Administrado en vivo</h3>
+            <p>Los admins editan los vínculos usuario→agente en la UI. Sin cambios de código ni redespliegues — y los especialistas están bloqueados por IAM para que el filtro no pueda saltarse.</p>
+          </div>
+        </div>
+        <aside class="notes">
+          ¿Quién puede usar qué agente? Eso lo resuelve un control de acceso por usuario, fail-closed, respaldado por Firestore. En cada turno de conversación, el supervisor toma el correo verificado del usuario desde el contexto de invocación y lee su lista de agentes autorizados. Si un empleado solo tiene derecho al catálogo de productos, el supervisor remueve dinámicamente los especialistas de pedidos y clientes de sus subagentes para esa petición — el modelo literalmente no puede delegarles. Si no existe registro para el usuario, el sistema falla cerrado: ningún agente. Como segunda capa, un before-tool callback bloquea en duro cualquier delegación que se cuele. Y como los engines especialistas están bloqueados por IAM a la service account del supervisor, no hay camino que rodee el filtro. Los administradores gestionan todo esto en vivo en la vista Admin — un cambio de permisos surte efecto en el siguiente mensaje del usuario.
+        </aside>
+      </section>
+
+      <!-- 17 · A8: red zero-trust -->
+      <section data-scqa="A" data-background-gradient="radial-gradient(ellipse at 15% -25%, #10261a 0%, #0b0f14 52%)">
+        <div class="kicker k-green">Respuesta · Seguridad y Redes</div>
+        <h2>Privado por construcción: identidad verificada al entrar, tokens acuñados al salir, cero contraseñas</h2>
+        <div class="grid cols-2">
+          <div class="card t-green"><h3><span class="ico">🪪</span>Identidad IAP verificada</h3><p>El BFF verifica el <strong>JWT firmado de IAP</strong> — nunca los headers falsificables. Ese único correo verificado se vuelve el user ID, el sujeto del ACL, el dueño de la key y el campo de usuario en cada log.</p></div>
+          <div class="card t-green"><h3><span class="ico">🔒</span>PSC bidireccional</h3><p>IA → Apigee por una <em>interfaz</em> PSC; Apigee → backend por un <em>service attachment</em> PSC. El tráfico nunca sale del backbone de Google.</p></div>
+          <div class="card t-green"><h3><span class="ico">🛂</span>Servicios solo-IAM</h3><p>El Cloud Run del backend acepta solo la SA invocadora dedicada de Apigee, cuyo <strong>único</strong> poder es <code>run.invoker</code> sobre esos tres servicios.</p></div>
+          <div class="card t-green"><h3><span class="ico">🚫🔑</span>Base de datos sin contraseñas</h3><p>Autenticación IAM de Cloud SQL: la service account del runtime <em>es</em> el usuario de la base. <strong>Cero contraseñas en todo el stack.</strong></p></div>
+        </div>
+        <aside class="notes">
+          Ahora, los cuatro agujeros de seguridad de la complicación, cerrados uno por uno. ¿Identidad falsificable? El BFF verifica la firma criptográfica de la aserción JWT de IAP — nunca los headers en texto plano — y ese único correo verificado se convierte en el user ID de Agent Engine, el sujeto del ACL, el dueño de la API key y el campo de usuario en cada línea de log. Una identidad, probada una vez, usada en todas partes. ¿Backends públicos? No existen: ambas rutas entre proyectos viajan por Private Service Connect — hacia el norte de los agentes a Apigee, hacia el sur de Apigee al balanceador interno del backend — así que el tráfico nunca abandona el backbone privado de Google, y el proyecto backend no tiene superficie pública alguna. ¿Credenciales todopoderosas? Los servicios del backend están bloqueados por IAM a una única service account invocadora cuyo único permiso es invocar esos tres servicios. ¿Y contraseñas de base de datos? No existen: la autenticación IAM de Cloud SQL hace que la propia service account del runtime sea el usuario de la base. Nada que filtrar, nada que rotar.
+        </aside>
+      </section>
+
+      <!-- 18 · A9: observabilidad -->
+      <section data-scqa="A" data-background-gradient="radial-gradient(ellipse at 85% -25%, #10261a 0%, #0b0f14 52%)">
+        <div class="kicker k-green">Respuesta · Observabilidad</div>
+        <h2>Un trace ID del navegador a la base de datos — cuatro logs, un esquema, un panel</h2>
+        <table class="gov">
+          <thead><tr><th>Log con nombre</th><th>Escrito por</th><th>Contiene</th></tr></thead>
+          <tbody>
+            <tr><td><code>front-ai-logs</code></td><td>El BFF</td><td>usuario, vista, mensaje, descomposición de latencia</td></tr>
+            <tr><td><code>apigee-ai-logs</code></td><td>Los 7 proxies</td><td>usuario, app, modelo, <strong>conteo de tokens, estado de cuota</strong>, 4 timestamps</td></tr>
+            <tr><td><code>agent-ai-logs</code></td><td>Los 4 engines</td><td>agente, sesión, llamadas a modelos y herramientas</td></tr>
+            <tr><td><code>services-ai-logs</code></td><td>3 microservicios</td><td>servicio, verbo, ruta, estado, latencia</td></tr>
+          </tbody>
+        </table>
+        <p class="lede" style="margin-top:0.9em;">Cada entrada lleva el mismo <code>traceparent</code> W3C, acuñado en el BFF y propagado por IAP, el gateway, los engines, <strong>los saltos A2A</strong> y MCP. Un filtro = la transacción completa.</p>
+        <aside class="notes">
+          Esta es la respuesta a la opacidad. Cuando un usuario envía un mensaje, el BFF acuña un traceparent estándar W3C. Ese identificador se pasa a Apigee, se inyecta en la sesión de Agent Engine, se reenvía en los metadatos A2A hacia los especialistas — el salto donde el contexto de traza normalmente muere — se lleva al servidor MCP y se entrega a los microservicios del backend. Cada componente escribe una entrada estructurada por interacción en uno de cuatro logs con nombre, todos en el proyecto de IA, todos con un esquema canónico único: el log del frontend, el del gateway con conteos de tokens y estado de cuota y una descomposición de latencia de cuatro timestamps, el de agentes y el de servicios. El beneficio es operativo: filtras Cloud Logging por un trace ID y ves la transacción entera, a través de los tres proyectos, en orden, con campos de latencia consistentes. El problema de los cuatro pajares se convierte en una sola consulta.
+        </aside>
+      </section>
+
+      <!-- 19 · DEMO 1 -->
+      <section data-scqa="A" data-background-gradient="radial-gradient(ellipse at 50% -25%, #2a1d05 0%, #0b0f14 58%)">
+        <div class="kicker k-demo">▶ Demo en Vivo #1 · Trace Explorer</div>
+        <h2>Reproduce cualquier transacción salto a salto, con latencia real medida</h2>
+        <img class="r-stretch shot-img" src="img/trace-explorer.gif" alt="Trace Explorer: reproducción animada a través de los tres proyectos con cascada de latencia">
+        <p class="caption">Construido puramente leyendo los cuatro logs — el paquete animado se detiene en cada salto en proporción a su latencia medida.</p>
+        <aside class="notes">
+          Primer corte a demo en vivo: el Trace Explorer, integrado directamente en la UI de la demo. Lo que ven no es una maqueta y no añade telemetría nueva — se renderiza enteramente leyendo los cuatro logs estructurados. Eligen cualquier transacción reciente y la UI la reconstruye: un paquete animado recorre la topología de tres proyectos — navegador, IAP, gateway, supervisor, el salto A2A al especialista, MCP, Cloud Run, Cloud SQL — y se detiene en cada salto en proporción a la latencia real medida de ese salto. Debajo, una cascada desglosa cada milisegundo, junto a los registros de log crudos por si quieren la verdad de base. Déjenme cambiar al entorno en vivo y reproducir una transacción multiagente real de extremo a extremo. [DEMO — presupuesten 3–4 minutos: elijan una traza de la vista Agent con delegación, dejen correr la reproducción una vez y recorran la cascada.]
+        </aside>
+      </section>
+
+      <!-- 20 · A10: sesiones -->
+      <section data-scqa="A" data-background-gradient="radial-gradient(ellipse at 15% -25%, #10261a 0%, #0b0f14 52%)">
+        <div class="kicker k-green">Respuesta · Observabilidad</div>
+        <h2>De los logs a la rendición de cuentas: usuario → sesión → traza, navegable</h2>
+        <div class="split">
+          <div class="shot"><img src="img/sessions-view.png" alt="Vista Sessions: navegador usuario a sesión a traza con acumulados"></div>
+          <div>
+            <div class="card t-green" style="margin-bottom:0.5em;">
+              <h3><span class="ico">🗂️</span>Historial por usuario</h3>
+              <p>Las sesiones persisten y se reproducen; los admins navegan <strong>usuario → sesión → traza</strong> con conteos acumulados.</p>
+            </div>
+            <div class="card t-green">
+              <h3><span class="ico">➕</span>Cero telemetría nueva</h3>
+              <p>Las vistas Sessions y Trace son <strong>pura relectura de los cuatro logs</strong> — la capa de observabilidad no cuesta nada extra.</p>
+            </div>
+          </div>
+        </div>
+        <aside class="notes">
+          Los mismos cuatro logs también responden la pregunta de rendición de cuentas. Esta es la vista Sessions: las conversaciones de cada usuario persisten y se acumulan en un navegador — eliges un usuario, ves sus sesiones, abres una sesión y saltas directo a la reproducción de traza de cualquier turno. Para un administrador esto cierra el círculo: de "quién ha estado usando el sistema y cuánto" hasta "muéstrame exactamente qué pasó en este turno concreto" en tres clics. Y quiero subrayar el punto arquitectónico: ni esta vista ni el Trace Explorer añadieron instrumentación nueva. Son pura relectura de los mismos cuatro logs estructurados que cada componente ya escribía. Si tu esquema de telemetría es correcto, las herramientas de administración salen casi gratis.
+        </aside>
+      </section>
+
+      <!-- 21 · DEMO 2 -->
+      <section data-scqa="A" data-background-gradient="radial-gradient(ellipse at 50% -25%, #2a1d05 0%, #0b0f14 58%)">
+        <div class="kicker k-demo">▶ Demo en Vivo #2 · Analítica de Tokens</div>
+        <h2>Tokens por modelo, agente y usuario — sin pipeline de ETL</h2>
+        <div class="grid cols-2" style="align-items:center;">
+          <div>
+            <div class="shot"><img src="img/apigee-reports.png" alt="Reportes personalizados de Apigee: tokens por modelo y usuario"></div>
+            <p class="caption">Reportes personalizados de Apigee — auto-aprovisionados sobre los Data Collectors del gateway.</p>
+          </div>
+          <div>
+            <div class="shot"><img src="img/monitoring-dashboard.png" alt="Dashboard de Cloud Monitoring: métricas de plataforma"></div>
+            <p class="caption">Cloud Monitoring — métricas de plataforma con frescura de minutos a partir de métricas basadas en logs.</p>
+          </div>
+        </div>
+        <aside class="notes">
+          Segundo corte a demo: la pregunta del dinero. Tradicionalmente, responder "quién gastó los tokens" implica exportar logs a un warehouse y mantener SQL programado. Aquí, el gateway captura la telemetría de tokens en el borde: los Data Collectors de Apigee registran modelo, app, usuario y conteos de tokens en cada llamada al pasar. La herramienta de analítica del repo aprovisiona automáticamente reportes personalizados de Apigee — tokens por modelo, por app, por usuario individual — y un dashboard de Cloud Monitoring alimentado por métricas basadas en logs: llamadas por minuto, percentiles de latencia, tokens por modelo, frescos en minutos. Sin pipeline, sin warehouse, sin jobs programados — el gateway ya estaba en cada ruta, así que ya veía todo lo que vale la pena contar. Déjenme pasar a los dashboards en vivo y cortar el gasto de tokens por usuario en tiempo real. [DEMO — presupuesten 2–3 minutos: un reporte personalizado + el dashboard de monitoring.]
+        </aside>
+      </section>
+
+      <!-- 22 · A11: replicabilidad -->
+      <section data-scqa="A" data-background-gradient="radial-gradient(ellipse at 85% -25%, #10261a 0%, #0b0f14 52%)">
+        <div class="kicker k-green">Respuesta · Replicabilidad</div>
+        <h2>Todo el stack se reconstruye desde tres proyectos vacíos — y lo demuestra</h2>
+        <div class="grid cols-2">
+          <div class="card t-green">
+            <h3><span class="ico">📜</span>Declarado, no clicado</h3>
+            <ul>
+              <li><code>demo-environment.yaml</code> — el <strong>único</strong> archivo que nombra proyectos, regiones e identidad admin.</li>
+              <li>Tres manifiestos declaran el estado deseado; <strong>siete herramientas</strong> convergen el estado real hacia ellos.</li>
+              <li>La misma gramática en todas: <code>--check</code> · <code>--dry-run</code> · confirmación · <code>--apply</code>.</li>
+            </ul>
+          </div>
+          <div class="card t-green">
+            <h3><span class="ico">🧪</span>Blindado con tests</h3>
+            <ul>
+              <li>El build falla ante <strong>IDs de proyecto codificados</strong> — en código <em>y</em> en docs.</li>
+              <li>Contratos entre manifiestos verificados: SAs, secretos, audiencias.</li>
+              <li>Corre offline en segundos — <strong>sin credenciales de GCP</strong>.</li>
+            </ul>
+          </div>
+        </div>
+        <p class="lede" style="margin-top:0.9em;">Auditar un entorno vivo es una bandera: <code>--check</code> imprime un reporte honesto de drift — <code>OK</code>, <code>DRIFT</code>, <code>MISSING</code> — para cada recurso.</p>
+        <aside class="notes">
+          ¿Cómo despliegas algo así de complejo sin error humano — y cómo sabes que un entorno no ha derivado desde entonces? Todo es declarativo. Un archivo de entorno nombra los tres proyectos, las regiones y la identidad admin — es el único lugar donde existen esos valores. Tres manifiestos versionados declaran el estado deseado de los agentes, el gateway y el backend. Siete herramientas convergen el estado real de la nube hacia los manifiestos, y todas hablan la misma gramática: check te da un reporte de drift de solo lectura, dry-run previsualiza, la ejecución directa pide confirmación y apply corre desatendido para CI. Así que auditar un entorno vivo es literalmente una bandera. Y el repo defiende su propia replicabilidad: tests guardián hacen fallar el build si alguien comitea un ID de proyecto codificado — en código o en documentación — y verifican los manifiestos entre sí, de modo que la service account que crea un manifiesto coincida con los permisos que otorga otro. Esos tests corren offline, en segundos, en cada cambio.
+        </aside>
+      </section>
+
+      <!-- 23 · A12: patrones -->
+      <section data-scqa="A" data-background-gradient="radial-gradient(ellipse at 15% -25%, #10261a 0%, #0b0f14 52%)">
+        <div class="kicker k-green">Respuesta · Conclusiones</div>
+        <h2>Seis patrones que vale la pena llevarse — aunque nunca despliegues la demo</h2>
+        <div class="grid cols-3">
+          <div class="card fragment fade-up"><h3><span class="ico">1️⃣</span>Streaming A2A, ADK 2.3</h3><p>Los hooks funcionales de client factory + conversor SSE.</p></div>
+          <div class="card fragment fade-up"><h3><span class="ico">2️⃣</span>Auto-reparación vía Registry</h3><p>Redespliegues de especialistas con cero acoplamiento al supervisor.</p></div>
+          <div class="card fragment fade-up"><h3><span class="ico">3️⃣</span>Apigee como gateway de LLMs</h3><p>Keys ligadas a identidad, cuotas de tokens, enrutamiento de dos publishers.</p></div>
+          <div class="card fragment fade-up"><h3><span class="ico">4️⃣</span>Trazado de extremo a extremo</h3><p>Un <code>traceparent</code> que sobrevive a IAP, A2A y MCP.</p></div>
+          <div class="card fragment fade-up"><h3><span class="ico">5️⃣</span>Provisioners check/apply</h3><p>Herramientas convergentes y honestas con el drift, auditables con una bandera.</p></div>
+          <div class="card fragment fade-up"><h3><span class="ico">6️⃣</span>Analítica de tokens sin ETL</h3><p>Data Collectors → reportes personalizados. Sin pipeline.</p></div>
+        </div>
+        <aside class="notes">
+          Aunque nunca desplieguen este repositorio de punta a punta, hay seis patrones de nivel de producción que pueden llevarse directamente. Uno: los hooks exactos de client factory para subagentes A2A con streaming bajo ADK 2.3. Dos: el descubrimiento auto-reparable en runtime que desacopla supervisores de los redespliegues de especialistas. Tres: las configuraciones de proxies de Apigee para gobernar Gemini y Claude tras keys unificadas ligadas a identidad y cuotas de tokens. Cuatro: la propagación de trazas W3C de extremo a extremo que sobrevive a los saltos donde el contexto suele morir — IAP, A2A, MCP. Cinco: el modelo de herramientas check-apply idempotentes con reporte honesto de drift. Seis: la analítica de tokens sin ETL desde los Data Collectors del gateway. Cada patrón es código documentado, probado y funcional en el repo — desármenlo y adáptenlo.
+        </aside>
+      </section>
+
+      <!-- 24 · CIERRE -->
+      <section class="cover" data-scqa="A"
+               data-background-gradient="radial-gradient(ellipse at 50% 120%, #123322 0%, #0b0f14 60%)">
+        <div class="kicker k-green" style="font-size:0.46em;">Open Source · Apache 2.0</div>
+        <h1 style="font-size:1.6em;">Sí — y puedes reconstruirlo tú mismo</h1>
+        <p class="sub">Cada llamada gobernada, atribuida, trazada y privada — desde tres proyectos vacíos, con los componentes de GCP que ya tienes.</p>
+        <div class="repo-box">
+          <p><strong>Repositorio</strong> &nbsp;<code>github.com/ricardosmh/adk-apigee-multiagent-demo</code></p>
+          <p><strong>Runbook</strong> &nbsp;<code>docs/GETTING_STARTED.md</code> — fases A–E, unas horas en proyectos nuevos</p>
+          <p><strong>Empieza por</strong> &nbsp;<code>docs/ARCHITECTURE.md</code> · los patrones de la lámina anterior</p>
+        </div>
+        <p class="sub" style="margin-top:1.2em; font-size:0.5em;">Despliégalo. Desármalo. Llévate lo que necesites. — <strong>Preguntas y respuestas</strong></p>
+        <aside class="notes">
+          Volvamos a nuestra pregunta: ¿puedes construir un sistema multiagente donde cada llamada esté gobernada, atribuida, trazada y sea privada — y reconstruirlo todo desde tres proyectos vacíos? Sí. Y lo acaban de ver funcionando. Operar IA agéntica en producción empresarial no exige sacrificar seguridad, gobernanza ni observabilidad — combinar el Agent Engine de GEAP y el protocolo A2A con Apigee X y Private Service Connect da a los desarrolladores toda la flexibilidad de los agentes mientras los equipos de plataforma y seguridad conservan control total sobre identidad, privacidad y presupuestos de tokens. Todo lo de hoy es open source bajo Apache 2.0, en el repositorio en pantalla. El runbook de inicio reconstruye el stack completo en proyectos nuevos en unas horas — la mayor parte es ver converger a los provisioners. Clónenlo, despliéguenlo, desármenlo y llévense los patrones a su propia arquitectura. Gracias — y con gusto respondo preguntas.
+        </aside>
+      </section>
+
+    </div>
+  </div>
+
+  <script src="js/reveal.js"></script>
+  <script src="plugin/notes/notes.js"></script>
+  <script>
+    Reveal.initialize({
+      hash: true,
+      slideNumber: 'c/t',
+      transition: 'fade',
+      transitionSpeed: 'fast',
+      backgroundTransition: 'fade',
+      width: 1920,
+      height: 1080,
+      margin: 0.06,
+      center: true,
+      plugins: [ RevealNotes ]
+    });
+
+    window.addEventListener('load', () => Reveal.layout());
+
+    document.querySelectorAll('#lang-switch .lang-btn:not(.active)').forEach(a => {
+      a.addEventListener('click', e => {
+        e.preventDefault();
+        window.location.href = a.dataset.target + window.location.hash;
+      });
+    });
+
+    (function () {
+      const btn = document.getElementById('fsToggle');
+      function inFs() { return !!(document.fullscreenElement || document.webkitFullscreenElement); }
+      function sync() { btn.innerHTML = inFs() ? '⛶&nbsp;Salir de pantalla completa' : '⛶&nbsp;Pantalla completa'; }
+      btn.addEventListener('click', () => {
+        const el = document.documentElement;
+        if (inFs()) (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+        else (el.requestFullscreen || el.webkitRequestFullscreen).call(el);
+      });
+      document.addEventListener('fullscreenchange', sync);
+      document.addEventListener('webkitfullscreenchange', sync);
+      sync();
+    })();
+
+    (function () {
+      const rail = document.getElementById('scqa-rail');
+      const segs = Array.from(rail.querySelectorAll('.rail-seg'));
+      const order = ['S', 'C', 'Q', 'A'];
+      function update(slide) {
+        if (!slide) return;
+        const phase = slide.dataset.scqa;
+        const hide = slide.dataset.rail === 'hide' || !phase;
+        rail.classList.toggle('rail-hidden', hide);
+        const idx = order.indexOf(phase);
+        segs.forEach(seg => {
+          const sIdx = order.indexOf(seg.dataset.phase);
+          seg.classList.toggle('active', sIdx === idx);
+          seg.classList.toggle('done', idx > -1 && sIdx < idx);
+        });
+      }
+      segs.forEach(seg => seg.addEventListener('click', () => {
+        const target = document.querySelector(`.slides section[data-scqa="${seg.dataset.phase}"]`);
+        if (!target) return;
+        const all = Array.from(document.querySelectorAll('.slides section'));
+        Reveal.slide(all.indexOf(target));
+      }));
+      Reveal.on('slidechanged', e => update(e.currentSlide));
+      Reveal.on('ready', e => update(e.currentSlide));
+    })();
+
+    (function () {
+      const vp  = document.getElementById('archViewport');
+      const img = document.getElementById('archImg');
+      if (!vp || !img) return;
+      let x = 0, y = 0, k = 1;
+      let minK = 0.05;
+      let dragging = false, lastX = 0, lastY = 0;
+      function apply() { img.style.transform = `translate(${x}px, ${y}px) scale(${k})`; }
+      function toLocal(e) {
+        const r = vp.getBoundingClientRect();
+        const s = (typeof Reveal !== 'undefined' && Reveal.getScale) ? Reveal.getScale() : 1;
+        return { x: (e.clientX - r.left) / s, y: (e.clientY - r.top) / s, s };
+      }
+      function fit() {
+        const iw = img.naturalWidth || 13270, ih = img.naturalHeight || 7440;
+        const vw = vp.clientWidth, vh = vp.clientHeight;
+        k = Math.min(vw / iw, vh / ih);
+        minK = k * 0.5;
+        x = (vw - iw * k) / 2;
+        y = (vh - ih * k) / 2;
+        apply();
+      }
+      function zoomAt(px, py, factor) {
+        const nk = Math.min(Math.max(k * factor, minK), 4);
+        x = px - (px - x) * (nk / k);
+        y = py - (py - y) * (nk / k);
+        k = nk;
+        apply();
+      }
+      img.addEventListener('load', fit);
+      if (img.complete && img.naturalWidth) fit();
+      Reveal.on('slidechanged', e => {
+        if (e.currentSlide && e.currentSlide.contains(vp)) setTimeout(fit, 60);
+      });
+      window.addEventListener('resize', () => {
+        const cur = Reveal.getCurrentSlide && Reveal.getCurrentSlide();
+        if (cur && cur.contains(vp)) fit();
+      });
+      vp.addEventListener('wheel', e => {
+        e.preventDefault();
+        const p = toLocal(e);
+        zoomAt(p.x, p.y, e.deltaY < 0 ? 1.16 : 1 / 1.16);
+      }, { passive: false });
+      vp.addEventListener('pointerdown', e => {
+        dragging = true; lastX = e.clientX; lastY = e.clientY;
+        vp.classList.add('dragging');
+        vp.setPointerCapture(e.pointerId);
+      });
+      vp.addEventListener('pointermove', e => {
+        if (!dragging) return;
+        const s = (Reveal.getScale && Reveal.getScale()) || 1;
+        x += (e.clientX - lastX) / s;
+        y += (e.clientY - lastY) / s;
+        lastX = e.clientX; lastY = e.clientY;
+        apply();
+      });
+      ['pointerup', 'pointercancel', 'pointerleave'].forEach(ev =>
+        vp.addEventListener(ev, () => { dragging = false; vp.classList.remove('dragging'); }));
+      vp.addEventListener('dblclick', e => {
+        e.preventDefault();
+        const p = toLocal(e);
+        zoomAt(p.x, p.y, 1.9);
+      });
+      document.getElementById('archZoomIn').addEventListener('click', () =>
+        zoomAt(vp.clientWidth / 2, vp.clientHeight / 2, 1.35));
+      document.getElementById('archZoomOut').addEventListener('click', () =>
+        zoomAt(vp.clientWidth / 2, vp.clientHeight / 2, 1 / 1.35));
+      document.getElementById('archReset').addEventListener('click', fit);
+    })();
+  </script>
+</body>
+</html>

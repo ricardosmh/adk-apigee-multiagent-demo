@@ -20,6 +20,13 @@
     <div class="rail-seg" data-phase="A"><span class="seg-dot"></span>Answer</div>
   </nav>
 
+  <!-- Language switcher: sibling files share the slide hash -->
+  <nav id="lang-switch" aria-label="Language">
+    <a class="lang-btn active" data-target="index.html"><span class="flag">🇺🇸</span>EN</a>
+    <a class="lang-btn" data-target="index-es.html"><span class="flag">🇪🇸</span>ES</a>
+    <a class="lang-btn" data-target="index-pt.html"><span class="flag">🇧🇷</span>PT</a>
+  </nav>
+
   <!-- Bottom-left HUD: repository link + fullscreen toggle -->
   <div id="deck-hud">
     <a class="hud-btn" href="https://github.com/ricardosmh/adk-apigee-multiagent-demo"
@@ -582,6 +589,14 @@
 
     // r-stretch measures images at layout time; re-layout once all assets load.
     window.addEventListener('load', () => Reveal.layout());
+
+    /* ---------- Language switcher: keep the current slide across languages ---------- */
+    document.querySelectorAll('#lang-switch .lang-btn:not(.active)').forEach(a => {
+      a.addEventListener('click', e => {
+        e.preventDefault();
+        window.location.href = a.dataset.target + window.location.hash;
+      });
+    });
 
     /* ---------- Fullscreen toggle ---------- */
     (function () {
