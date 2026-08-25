@@ -6,8 +6,8 @@
   <meta name="description" content="A replicable reference architecture with GEAP, the A2A protocol, and Apigee X">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>🛡️</text></svg>">
-  <link rel="stylesheet" href="css/reveal.css">
-  <link rel="stylesheet" href="css/theme.css">
+  <link rel="stylesheet" href="css/reveal.css?v=4">
+  <link rel="stylesheet" href="css/theme.css?v=4">
 </head>
 <body>
 
@@ -229,7 +229,7 @@
         <div class="kicker k-green">Answer · The Architecture</div>
         <h2 style="margin-bottom:0.15em;">One topology, three projects, every path through the gateway</h2>
         <div class="arch-viewport" id="archViewport">
-          <img id="archImg" src="img/architecture.svg" alt="Full architecture diagram: AI project, Apigee project, backend project">
+          <img id="archImg" src="img/architecture.png?v=4" alt="Full architecture diagram: AI project, Apigee project, backend project">
           <div class="arch-controls">
             <button id="archZoomOut" title="Zoom out">−</button>
             <button id="archZoomIn" title="Zoom in">+</button>
@@ -571,8 +571,8 @@
     </div>
   </div>
 
-  <script src="js/reveal.js"></script>
-  <script src="plugin/notes/notes.js"></script>
+  <script src="js/reveal.js?v=4"></script>
+  <script src="plugin/notes/notes.js?v=4"></script>
   <script>
     Reveal.initialize({
       hash: true,
@@ -664,7 +664,7 @@
         return { x: (e.clientX - r.left) / s, y: (e.clientY - r.top) / s, s };
       }
       function fit() {
-        const iw = img.naturalWidth || 13270, ih = img.naturalHeight || 7440;
+        const iw = img.naturalWidth || 8000, ih = img.naturalHeight || 4485;
         const vw = vp.clientWidth, vh = vp.clientHeight;
         k = Math.min(vw / iw, vh / ih);
         minK = k * 0.5;
