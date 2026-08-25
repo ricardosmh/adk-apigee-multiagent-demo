@@ -46,6 +46,9 @@
 }
 
 /* --- Apply the theme variables (normally done by the stock theme file) --- */
+/* Reserve the SCQA rail's 52px so no slide content ever sits under it. */
+html, body { height: 100%; }
+body { box-sizing: border-box; padding-top: 52px; background: var(--bg); }
 .reveal-viewport { background: var(--bg); background-color: var(--r-background-color); }
 .reveal {
   font-family: var(--r-main-font);
@@ -153,6 +156,40 @@
 .rail-seg[data-phase="C"].active { color: var(--red); }
 .rail-seg[data-phase="Q"].active { color: var(--amber); }
 .rail-seg[data-phase="A"].active { color: var(--green); }
+
+/* ---------- Bottom-left HUD: repo link + fullscreen ---------- */
+
+#deck-hud {
+  position: fixed;
+  left: 16px; bottom: 14px;
+  z-index: 40;
+  display: flex; gap: 10px; align-items: center;
+  font-family: var(--r-main-font);
+}
+.hud-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  height: 40px; padding: 0 14px;
+  border-radius: 10px;
+  border: 1px solid var(--card-border);
+  background: rgba(13, 18, 25, 0.88);
+  color: var(--text-soft);
+  font-size: 14px; font-weight: 600;
+  cursor: pointer; text-decoration: none;
+  backdrop-filter: blur(5px);
+  transition: border-color 0.2s ease, color 0.2s ease;
+}
+.hud-btn:hover { border-color: var(--amber); color: var(--text); }
+.hud-btn svg { width: 18px; height: 18px; fill: currentColor; flex: none; }
+
+/* ---------- Product logos on cards (bottom-right, icons untouched) ---------- */
+
+.card { position: relative; }
+.card.has-logo { padding-bottom: 2.1em; }
+.card-logos {
+  position: absolute; right: 0.7em; bottom: 0.6em;
+  display: flex; gap: 0.35em; align-items: center;
+}
+.card-logos img { height: 1.05em; width: auto; display: block; margin: 0; }
 
 /* ---------- Slide scaffolding ---------- */
 
