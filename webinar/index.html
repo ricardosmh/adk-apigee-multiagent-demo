@@ -6,8 +6,8 @@
   <meta name="description" content="A replicable reference architecture with GEAP, the A2A protocol, and Apigee X">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>🛡️</text></svg>">
-  <link rel="stylesheet" href="css/reveal.css?v=4">
-  <link rel="stylesheet" href="css/theme.css?v=4">
+  <link rel="stylesheet" href="css/reveal.css?v=5">
+  <link rel="stylesheet" href="css/theme.css?v=5">
 </head>
 <body>
 
@@ -229,7 +229,8 @@
         <div class="kicker k-green">Answer · The Architecture</div>
         <h2 style="margin-bottom:0.15em;">One topology, three projects, every path through the gateway</h2>
         <div class="arch-viewport" id="archViewport">
-          <img id="archImg" src="img/architecture.png?v=4" alt="Full architecture diagram: AI project, Apigee project, backend project">
+          <img id="archImg" src="img/architecture.png?v=5" alt="Full architecture diagram: AI project, Apigee project, backend project">
+          <img id="archSvg" src="img/architecture.svg" alt="" aria-hidden="true">
           <div class="arch-controls">
             <button id="archZoomOut" title="Zoom out">−</button>
             <button id="archZoomIn" title="Zoom in">+</button>
@@ -571,8 +572,8 @@
     </div>
   </div>
 
-  <script src="js/reveal.js?v=4"></script>
-  <script src="plugin/notes/notes.js?v=4"></script>
+  <script src="js/reveal.js?v=5"></script>
+  <script src="plugin/notes/notes.js?v=5"></script>
   <script>
     Reveal.initialize({
       hash: true,
@@ -648,6 +649,13 @@
     (function () {
       const vp  = document.getElementById('archViewport');
       const img = document.getElementById('archImg');
+      const simg = document.getElementById('archSvg');
+      let gestureTimer = null;
+      function gesture() {
+        vp.classList.add('gesturing');
+        clearTimeout(gestureTimer);
+        gestureTimer = setTimeout(() => vp.classList.remove('gesturing'), 400);
+      }
       if (!vp || !img) return;
 
       let x = 0, y = 0, k = 1;          // translate + scale, in slide-space px
@@ -655,7 +663,9 @@
       let dragging = false, lastX = 0, lastY = 0;
 
       function apply() {
-        img.style.transform = `translate(${x}px, ${y}px) scale(${k})`;
+        const t = `translate(${x}px, ${y}px) scale(${k})`;
+        img.style.transform = t;
+        if (simg) simg.style.transform = t;
       }
       // Convert screen px to slide-space px (the deck is CSS-scaled).
       function toLocal(e) {
@@ -673,6 +683,7 @@
         apply();
       }
       function zoomAt(px, py, factor) {
+        gesture();
         const nk = Math.min(Math.max(k * factor, minK), 4);
         x = px - (px - x) * (nk / k);
         y = py - (py - y) * (nk / k);
@@ -703,6 +714,7 @@
       });
       vp.addEventListener('pointermove', e => {
         if (!dragging) return;
+        gesture();
         const s = (Reveal.getScale && Reveal.getScale()) || 1;
         x += (e.clientX - lastX) / s;
         y += (e.clientY - lastY) / s;
