@@ -396,18 +396,6 @@ img.shot-img {
   pointer-events: none;
   -webkit-user-drag: none; user-select: none;
 }
-/* Animated SVG overlay: sized to the PNG's coordinate space so one transform
-   drives both layers. Hidden while panning/zooming (the PNG carries the
-   gesture on the GPU), fades back in when the view settles so the flow
-   animations play at rest. */
-#archSvg {
-  width: 8000px; height: 4485px;
-  transition: opacity 0.35s ease 0.1s;
-}
-.arch-viewport.gesturing #archSvg {
-  opacity: 0;
-  transition: opacity 0.06s linear;
-}
 .arch-controls {
   position: absolute; right: 14px; top: 14px; z-index: 5;
   display: flex; gap: 8px;

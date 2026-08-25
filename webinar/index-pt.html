@@ -6,8 +6,8 @@
   <meta name="description" content="Uma arquitetura de referência replicável com GEAP, o protocolo A2A e o Apigee X">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>🛡️</text></svg>">
-  <link rel="stylesheet" href="css/reveal.css?v=5">
-  <link rel="stylesheet" href="css/theme.css?v=5">
+  <link rel="stylesheet" href="css/reveal.css?v=6">
+  <link rel="stylesheet" href="css/theme.css?v=6">
 </head>
 <body>
 
@@ -226,14 +226,13 @@
         <div class="kicker k-green">Resposta · A Arquitetura</div>
         <h2 style="margin-bottom:0.15em;">Uma topologia, três projetos, cada caminho passa pelo gateway</h2>
         <div class="arch-viewport" id="archViewport">
-          <img id="archImg" src="img/architecture.png?v=5" alt="Diagrama completo de arquitetura: projeto de IA, projeto do Apigee, projeto backend">
-          <img id="archSvg" src="img/architecture.svg" alt="" aria-hidden="true">
+          <img id="archImg" src="img/architecture.svg?v=6" alt="Diagrama completo de arquitetura: projeto de IA, projeto do Apigee, projeto backend">
           <div class="arch-controls">
             <button id="archZoomOut" title="Afastar">−</button>
             <button id="archZoomIn" title="Aproximar">+</button>
             <button id="archReset" title="Ajustar à tela">Ajustar</button>
           </div>
-          <div class="arch-hint">🖱️ arraste para mover · role para dar zoom · clique duplo para aproximar · Ajustar para redefinir</div>
+          <div class="arch-hint">🖱️ arraste ou role para mover · pinça / Ctrl+scroll para zoom · clique duplo para aproximar · Ajustar para redefinir</div>
         </div>
         <aside class="notes">
           Esta é a âncora arquitetural de toda a sessão — o diagrama completo e detalhado, e ele é navegável, então deixem-me percorrê-lo ao vivo. À esquerda, o projeto de IA: o navegador entra pelo Identity-Aware Proxy até o backend-for-frontend no Cloud Run, e aqui estão os quatro Agent Engines — o supervisor e os três especialistas — mais o Firestore para o ACL e o Secret Manager para as keys. No centro, o projeto do Apigee: um host de runtime expondo os caminhos-base que governam tudo — o endpoint de agentes, os caminhos de modelos, o gateway MCP e as APIs de e-commerce. À direita, o projeto backend: três microsserviços FastAPI atrás de um balanceador interno regional, e o Cloud SQL MySQL com autenticação IAM. Reparem nos dois links de Private Service Connect cruzando as fronteiras de projeto — para o norte, do projeto de IA ao Apigee, e para o sul, do Apigee ao backend. O projeto de IA não tem conectividade direta alguma com o backend; toda interação passa obrigatoriamente pelo plano de governança. Vou dar zoom em cada região conforme a discutirmos nos próximos slides.
@@ -569,8 +568,8 @@
     </div>
   </div>
 
-  <script src="js/reveal.js?v=5"></script>
-  <script src="plugin/notes/notes.js?v=5"></script>
+  <script src="js/reveal.js?v=6"></script>
+  <script src="plugin/notes/notes.js?v=6"></script>
   <script>
     Reveal.initialize({
       hash: true,
@@ -637,27 +636,18 @@
     (function () {
       const vp  = document.getElementById('archViewport');
       const img = document.getElementById('archImg');
-      const simg = document.getElementById('archSvg');
-      let gestureTimer = null;
-      function gesture() {
-        vp.classList.add('gesturing');
-        clearTimeout(gestureTimer);
-        gestureTimer = setTimeout(() => vp.classList.remove('gesturing'), 400);
-      }
       if (!vp || !img) return;
       let x = 0, y = 0, k = 1;
       let minK = 0.05;
       let dragging = false, lastX = 0, lastY = 0;
-      function apply() { const t = `translate(${x}px, ${y}px) scale(${k})`;
-        img.style.transform = t;
-        if (simg) simg.style.transform = t; }
+      function apply() { img.style.transform = `translate(${x}px, ${y}px) scale(${k})`; }
       function toLocal(e) {
         const r = vp.getBoundingClientRect();
         const s = (typeof Reveal !== 'undefined' && Reveal.getScale) ? Reveal.getScale() : 1;
         return { x: (e.clientX - r.left) / s, y: (e.clientY - r.top) / s, s };
       }
       function fit() {
-        const iw = img.naturalWidth || 8000, ih = img.naturalHeight || 4485;
+        const iw = img.naturalWidth || 13270, ih = img.naturalHeight || 7440;
         const vw = vp.clientWidth, vh = vp.clientHeight;
         k = Math.min(vw / iw, vh / ih);
         minK = k * 0.5;
@@ -666,7 +656,6 @@
         apply();
       }
       function zoomAt(px, py, factor) {
-        gesture();
         const nk = Math.min(Math.max(k * factor, minK), 4);
         x = px - (px - x) * (nk / k);
         y = py - (py - y) * (nk / k);
@@ -684,8 +673,16 @@
       });
       vp.addEventListener('wheel', e => {
         e.preventDefault();
-        const p = toLocal(e);
-        zoomAt(p.x, p.y, e.deltaY < 0 ? 1.16 : 1 / 1.16);
+        if (e.ctrlKey || e.metaKey) {          // pinch on trackpads, or Ctrl+scroll
+          const p = toLocal(e);
+          const f = Math.min(1.3, Math.max(1 / 1.3, Math.exp(-e.deltaY * 0.012)));
+          zoomAt(p.x, p.y, f);
+        } else {                                // plain scroll = pan
+          const s = (Reveal.getScale && Reveal.getScale()) || 1;
+          x -= e.deltaX / s;
+          y -= e.deltaY / s;
+          apply();
+        }
       }, { passive: false });
       vp.addEventListener('pointerdown', e => {
         dragging = true; lastX = e.clientX; lastY = e.clientY;
@@ -694,7 +691,6 @@
       });
       vp.addEventListener('pointermove', e => {
         if (!dragging) return;
-        gesture();
         const s = (Reveal.getScale && Reveal.getScale()) || 1;
         x += (e.clientX - lastX) / s;
         y += (e.clientY - lastY) / s;

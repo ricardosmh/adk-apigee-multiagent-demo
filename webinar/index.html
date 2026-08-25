@@ -6,8 +6,8 @@
   <meta name="description" content="A replicable reference architecture with GEAP, the A2A protocol, and Apigee X">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>🛡️</text></svg>">
-  <link rel="stylesheet" href="css/reveal.css?v=5">
-  <link rel="stylesheet" href="css/theme.css?v=5">
+  <link rel="stylesheet" href="css/reveal.css?v=6">
+  <link rel="stylesheet" href="css/theme.css?v=6">
 </head>
 <body>
 
@@ -229,14 +229,13 @@
         <div class="kicker k-green">Answer · The Architecture</div>
         <h2 style="margin-bottom:0.15em;">One topology, three projects, every path through the gateway</h2>
         <div class="arch-viewport" id="archViewport">
-          <img id="archImg" src="img/architecture.png?v=5" alt="Full architecture diagram: AI project, Apigee project, backend project">
-          <img id="archSvg" src="img/architecture.svg" alt="" aria-hidden="true">
+          <img id="archImg" src="img/architecture.svg?v=6" alt="Full architecture diagram: AI project, Apigee project, backend project">
           <div class="arch-controls">
             <button id="archZoomOut" title="Zoom out">−</button>
             <button id="archZoomIn" title="Zoom in">+</button>
             <button id="archReset" title="Fit to screen">Fit</button>
           </div>
-          <div class="arch-hint">🖱️ drag to pan · scroll to zoom · double-click to dive in · Fit to reset</div>
+          <div class="arch-hint">🖱️ drag or scroll to move · pinch / Ctrl+scroll to zoom · double-click to dive in · Fit to reset</div>
         </div>
         <aside class="notes">
           Here is the architectural anchor of the whole session — the full detailed diagram, and it is navigable, so let me walk you through it live. On the left, the AI project: the browser comes in through Identity-Aware Proxy to the backend-for-frontend on Cloud Run, and here are the four Agent Engines — the supervisor and the three specialists — plus Firestore for the ACL and Secret Manager for keys. In the middle, the Apigee project: one runtime host exposing the base paths that govern everything — the agents endpoint, the model paths, the MCP gateway, and the e-commerce management APIs. On the right, the backend project: three FastAPI microservices behind a regional internal load balancer, and Cloud SQL MySQL with IAM authentication. Notice the two Private Service Connect links crossing project boundaries — northbound from the AI project into Apigee, and southbound from Apigee into the backend. The AI project has zero direct connectivity to the backend; every interaction is forced through the governance plane. I'll zoom into each region as we discuss it in the coming slides.
@@ -572,8 +571,8 @@
     </div>
   </div>
 
-  <script src="js/reveal.js?v=5"></script>
-  <script src="plugin/notes/notes.js?v=5"></script>
+  <script src="js/reveal.js?v=6"></script>
+  <script src="plugin/notes/notes.js?v=6"></script>
   <script>
     Reveal.initialize({
       hash: true,
@@ -649,13 +648,6 @@
     (function () {
       const vp  = document.getElementById('archViewport');
       const img = document.getElementById('archImg');
-      const simg = document.getElementById('archSvg');
-      let gestureTimer = null;
-      function gesture() {
-        vp.classList.add('gesturing');
-        clearTimeout(gestureTimer);
-        gestureTimer = setTimeout(() => vp.classList.remove('gesturing'), 400);
-      }
       if (!vp || !img) return;
 
       let x = 0, y = 0, k = 1;          // translate + scale, in slide-space px
@@ -663,9 +655,7 @@
       let dragging = false, lastX = 0, lastY = 0;
 
       function apply() {
-        const t = `translate(${x}px, ${y}px) scale(${k})`;
-        img.style.transform = t;
-        if (simg) simg.style.transform = t;
+        img.style.transform = `translate(${x}px, ${y}px) scale(${k})`;
       }
       // Convert screen px to slide-space px (the deck is CSS-scaled).
       function toLocal(e) {
@@ -674,7 +664,7 @@
         return { x: (e.clientX - r.left) / s, y: (e.clientY - r.top) / s, s };
       }
       function fit() {
-        const iw = img.naturalWidth || 8000, ih = img.naturalHeight || 4485;
+        const iw = img.naturalWidth || 13270, ih = img.naturalHeight || 7440;
         const vw = vp.clientWidth, vh = vp.clientHeight;
         k = Math.min(vw / iw, vh / ih);
         minK = k * 0.5;
@@ -683,7 +673,6 @@
         apply();
       }
       function zoomAt(px, py, factor) {
-        gesture();
         const nk = Math.min(Math.max(k * factor, minK), 4);
         x = px - (px - x) * (nk / k);
         y = py - (py - y) * (nk / k);
@@ -703,8 +692,16 @@
 
       vp.addEventListener('wheel', e => {
         e.preventDefault();
-        const p = toLocal(e);
-        zoomAt(p.x, p.y, e.deltaY < 0 ? 1.16 : 1 / 1.16);
+        if (e.ctrlKey || e.metaKey) {          // pinch on trackpads, or Ctrl+scroll
+          const p = toLocal(e);
+          const f = Math.min(1.3, Math.max(1 / 1.3, Math.exp(-e.deltaY * 0.012)));
+          zoomAt(p.x, p.y, f);
+        } else {                                // plain scroll = pan
+          const s = (Reveal.getScale && Reveal.getScale()) || 1;
+          x -= e.deltaX / s;
+          y -= e.deltaY / s;
+          apply();
+        }
       }, { passive: false });
 
       vp.addEventListener('pointerdown', e => {
@@ -714,7 +711,6 @@
       });
       vp.addEventListener('pointermove', e => {
         if (!dragging) return;
-        gesture();
         const s = (Reveal.getScale && Reveal.getScale()) || 1;
         x += (e.clientX - lastX) / s;
         y += (e.clientY - lastY) / s;
